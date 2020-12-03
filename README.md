@@ -72,6 +72,7 @@ This is what you should get:
   <source src="https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=example_output_small_s.mp4"
   type="video/mp4">
 </video>
+<img src="readmeFiles/varroa_detect.png" alt="Detected Varroa" />
 
  - Blue dot: Pollen
  - Red dot: Varroa mite
