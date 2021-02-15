@@ -18,18 +18,29 @@ It monitors all bees and uses a neural network to detect the above mentioned cha
 
 
 ## How does it work
-Each frame provided by the camera (or video file) will processed to identify the bees in the image. The found bee positions will then be used to reconstruct the bee movements and paths using kalman filters. The paths are then used to count the bees entering or leaving the hive. Where the hive entry is on the upper part of the filmed pane and the exit is on the bottom.
+Each frame provided by the camera (or video file) will be processed to identify the bees in the image. The found bee positions will then be used to reconstruct the bee movements and paths using kalman filters. The paths are then used to count the bees entering or leaving the hive. Where the hive entry is on the upper part of the filmed pane and the exit is on the bottom.
 
-<img src="readmeFiles/count.png" alt="Detected Varroa" width="500" />
+<img src="readmeFiles/count.png" alt="Counting of bees" width="500" />
 
 Each detected bee will then be cut from the image, rotated and forwarded to a neural network for classification.
 
-<img src="readmeFiles/pollen.jpeg" alt="Detected Varroa" width="100" />
-<img src="readmeFiles/varroa.jpeg" alt="Detected Varroa" width="100" />
-<img src="readmeFiles/cooling.jpeg" alt="Detected Varroa" width="100" />
-<img src="readmeFiles/wasp.jpeg" alt="Detected Varroa" width="100" />
+<img src="readmeFiles/pollen.jpeg" alt="Detected Pollen" width="100" />
 
-The neural network performs simple classification tasks to identify bees with pollen, varroa mite infected bees, bees cooling the hive or wasp and counts them. The results can also be visualized. The neural network runs in a separate process and the results may be too late to visualize them, as the bee may have already left the filmed area. But that depends on the performance of the used system. On the JetsonNano, you will probably see that phenomen once in a while.
+`A bee carrying a packet of pollen`
+
+<img src="readmeFiles/varroa.jpeg" alt="Detected Varroa" width="100" />
+
+`A infested by a varroa mite. In fact its infected by two mites.`
+
+<img src="readmeFiles/cooling.jpeg" alt="Detected bees colling the hive" width="100" />
+
+`A bee that is coooling the hive. To do so, the bee stays stationary and moves its wings to move fresh air into the hive`
+
+<img src="readmeFiles/wasp.jpeg" alt="Detected Wasps" width="100" />
+
+`A typical wasp that can be found stealing honey from the hive`
+
+The neural network performs simple classification tasks to identify bees with pollen, varroa mite infected bees, bees cooling the hive or wasp and counts them. The results can also be visualized. The neural network runs in a separate process and the results may be too late to visualize them, as the bee may have already left the filmed area. But that depends on the performance of the used system. On the JetsonNano, you will probably see that phenomena once in a while.
 
 Below you can see that two bees were detected cooling the hive (green dots), one of them is even infected by varroa (red dot).
 
@@ -113,7 +124,7 @@ The inside looks like this:
 As you can see the filmed area is green and illumined by two LED-stripes in the front and back.
 
 ## Remarks
-- The neural network was trained with data that was collected with the above mentioned camera system. If you build your own system bee monitoring system, you may expierence different results due to different camera angles, resolutions, sharpness, background color and so on. In this case you should create your own dataset and train the neural network with it. Once complete, I'll provide my scripts and the dataset that I used to train the network.
+- The neural network was trained with data that was collected with the above mentioned camera system. If you build your own system bee monitoring system, you may experience different results due to different camera angles, resolutions, sharpness, background color and so on. In this case you should create your own dataset and train the neural network with it. Once complete, I'll provide my scripts and the dataset that I used to train the network.
 
 ## What is still to do?
 - Optimize the neural network with live data. Currently everything is based on video material that was captured at the end of the year.
