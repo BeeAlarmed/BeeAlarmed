@@ -20,14 +20,13 @@ import cv2
 import logging
 import random
 
-from Config import *
 from Statistics import getStatistics
-from Utils import loadWomanNames, variance_of_laplacian, pointInEllipse
+from Utils import loadWomanNames, variance_of_laplacian, pointInEllipse, get_config
 
 logger = logging.getLogger(__name__)
 
 
-class BeeTrack(object):
+class BeeTrack():
 
     """! The 'BeeTrack' object tracks a single bees movement using a kalman filter.
     """
@@ -38,7 +37,7 @@ class BeeTrack(object):
         self._name = ""
 
         ## Last detected bee position
-        self._lastDetect = None
+        self._last_dectect = None
 
         ## The tracks ID
         self.trackId = trackId
@@ -57,7 +56,7 @@ class BeeTrack(object):
                      ])
 
         # Keep track of the
-        self.trace = deque(maxlen=MAX_BEE_TRACE_LENGTH)
+        self.trace = deque(maxlen=get_config("MAX_BEE_TRACE_LENGTH"))
 
         # Amount of missed detetions
         self.skipped_frames = 0
@@ -67,13 +66,13 @@ class BeeTrack(object):
 
         # A set if determined track/bee characteristics
         self.tags = set()
-        self.reportedTags = set()
+        self.reported_tags = set()
 
         # The first detection which created this track
-        self.firstPosition = None
+        self.first_position = None
 
         # Whether the track is underneath of a group of bees
-        self.inGroup = False
+        self.in_group = False
 
         self.__tagCnts = {}
 
@@ -84,7 +83,8 @@ class BeeTrack(object):
         self._name = name
 
     def addTag(self, tag):
-        """! Add a tag the to track. Tag could be on of TAG_WESPE, TAG_VARROA, TAG_COOLING, TAG_POLLEN
+        """! Add a tag the to track. Tag could be on of "wasps", "varroa",
+             "cooling", "pollen"
         @param tag      The tag to add
         """
         if tag not in self.__tagCnts:
@@ -94,23 +94,23 @@ class BeeTrack(object):
         # Bees cooling the hive stay at the same position for a long time
         # and will pass the classification network multiple times.
         # To harden the detection, wait for at least 5 detection
-        if tag == TAG_COOLING and self.__tagCnts[tag] < 5:
+        if tag == "cooling" and self.__tagCnts["cooling"] < 5:
             return
 
         # Report to statistics
-        if tag not in self.reportedTags:
+        if tag not in self.reported_tags:
             _dh = getStatistics()
             _dh.addClassificationResultByTag(self.trackId, tag)
 
         # Add the tag
         self.tags |= set((tag,))
-        self.reportedTags |= set((tag,))
+        self.reported_tags |= set((tag,))
 
     def imageClassificationComplete(self, result):
         """! Merge classification results into this track
-        @param results  A tuple, any of (TAG_WESPE, TAG_VARROA, TAG_COOLING, TAG_POLLEN)
+        @param results  A tuple, any of ("wasps", "varroa", "cooling", "pollen")
         """
-        values = [TAG_WESPE, TAG_VARROA, TAG_COOLING, TAG_POLLEN]
+        values = ["wasps", "varroa", "cooling", "pollen"]
         for item in values:
             if item in result:
                 self.addTag(item)
@@ -124,14 +124,14 @@ class BeeTrack(object):
 
         # Add the position to the trace
         if len(self.trace) == 0:
-            self.firstPosition = position
+            self.first_position = position
         self.trace.append(position)
 
     def predict(self):
         """! Perform the kalman prediction
         """
         self.KF.predict()
-        self.lastPredict = self.KF.x
+        self.last_predict = self.KF.x
         return self.KF.x
 
     def correct(self, position):
@@ -158,6 +158,14 @@ class BeeTracker(object):
         self._frame_height = frame_size[1]
         self._frame_width = frame_size[0]
 
+
+        # Create random track colors
+        self.track_colors = []
+        for i in range(get_config("TRACK_COLOR_COUNT")):
+            self.track_colors.append((random.randint(100,255),
+                random.randint(100,255),
+                random.randint(100,255)))
+
     def getTrackById(self, trackId):
         """! Returns the track object for the given ID (If it exists)
         @param  trackId     The track id to return a track for
@@ -179,13 +187,13 @@ class BeeTracker(object):
         for j in range(len(self.tracks)):
 
             # Only Draw tracks that have more than one waypoints
-            if (len(self.tracks[j].trace) > 1):
+            if len(self.tracks[j].trace) > 1:
 
                 # Select a track color
-                t_c = track_colors[self.tracks[j].trackId % len(track_colors)]
+                t_c = self.track_colors[self.tracks[j].trackId % len(self.track_colors)]
 
                 # Draw marker that shows tracks underneath groups
-                if DRAW_GROUP_MARKER and self.tracks[j].inGroup:
+                if get_config("DRAW_GROUP_MARKER") and self.tracks[j].in_group:
                     x = int(self.tracks[j].trace[-1][0])
                     y = int(self.tracks[j].trace[-1][1])
                     tl = (x-30,y-30)
@@ -193,7 +201,7 @@ class BeeTracker(object):
                     cv2.rectangle(frame,tl,br,(0,0,0),10)
 
                 # Draw rectangle over last position
-                if DRAW_RECTANGLE_OVER_LAST_POSTION:
+                if get_config("DRAW_RECTANGLE_OVER_LAST_POSTION"):
                     x = int(self.tracks[j].trace[-1][0])
                     y = int(self.tracks[j].trace[-1][1])
                     tl = (x-10,y-10)
@@ -201,7 +209,7 @@ class BeeTracker(object):
                     cv2.rectangle(frame,tl,br,t_c,1)
 
                 # Draw trace
-                if DRAW_TRACK_TRACE:
+                if get_config("DRAW_TRACK_TRACE"):
                     for k in range(len(self.tracks[j].trace)):
                         x = int(self.tracks[j].trace[k][0])
                         y = int(self.tracks[j].trace[k][1])
@@ -213,14 +221,14 @@ class BeeTracker(object):
                             cv2.line(frame,(x,y), (x2,y2), (0,0,0), 1)
 
                 # Draw prediction
-                if DRAW_TRACK_PREDICTION:
-                    x = int(self.tracks[j].lastPredict[0])
-                    y = int(self.tracks[j].lastPredict[3])
+                if get_config("DRAW_TRACK_PREDICTION"):
+                    x = int(self.tracks[j].last_predict[0])
+                    y = int(self.tracks[j].last_predict[3])
                     cv2.circle(frame,(x,y), self.dist_threshold, (0,0,255), 1)
 
                 # Draw velocity, acceleration
-                if DRAW_ACCELERATION or DRAW_VELOCITY:
-                    l_p = self.tracks[j].lastPredict
+                if get_config("DRAW_ACCELERATION") or get_config("DRAW_VELOCITY"):
+                    l_p = self.tracks[j].last_predict
 
                     l_px = int(l_p[0])
                     v_px = int(l_p[1])*10 + l_px
@@ -239,25 +247,26 @@ class BeeTracker(object):
 
                 x = int(self.tracks[j].trace[-1][0])
                 y = int(self.tracks[j].trace[-1][1])
-                if TAG_VARROA in self.tracks[j].tags:
+                if "varroa" in self.tracks[j].tags:
                     cv2.circle(frame, (x-10, y-50), 9, (0, 0, 255), -1)
                     cv2.circle(frame, (x-10, y-50), 10, (0, 0, 0), 2)
-                if TAG_POLLEN in self.tracks[j].tags:
+                if "pollen" in self.tracks[j].tags:
                     cv2.circle(frame, (x-30, y-50), 9, (255, 0, 0), -1)
                     cv2.circle(frame, (x-30, y-50), 10, (0, 0, 0), 2)
-                if TAG_COOLING in self.tracks[j].tags:
+                if "cooling" in self.tracks[j].tags:
                     cv2.circle(frame, (x+10, y-50), 9, (0, 255, 0), -1)
                     cv2.circle(frame, (x+10, y-50), 10, (0, 0, 0), 2)
-                if TAG_WESPE in self.tracks[j].tags:
+                if "wasps" in self.tracks[j].tags:
                     cv2.circle(frame, (x+30, y-50), 9,(0, 0, 0), -1)
                     cv2.circle(frame, (x+30, y-50), 10, (0, 0, 0), 2)
 
                 # Add Track Id
-                if DRAW_TRACK_ID:
-                    cv2.putText(frame, str(self.tracks[j].trackId) + " " + self.tracks[j]._name, (x,y-30),
+                if get_config("DRAW_TRACK_ID"):
+                    cv2.putText(frame, str(self.tracks[j].trackId) + " " + \
+                            self.tracks[j]._name, (x,y-30),
                             cv2.FONT_HERSHEY_DUPLEX, 1, (255,255,255))
         # Draw count of bees
-        if DRAW_IN_OUT_STATS:
+        if get_config("DRAW_IN_OUT_STATS"):
             _dh = getStatistics()
             bees_in, bees_out = _dh.getBeeCountOverall()
             cv2.putText(frame,"In: %i, Out: %i" % (bees_in, bees_out), (50,50),
@@ -273,7 +282,8 @@ class BeeTracker(object):
         data = []
         for j in range(len(self.tracks)):
             track = self.tracks[j]
-            if len(track.trace) and track.skipped_frames == 0 and track.processed_frames % frame_step == 0:
+            if len(track.trace) and track.skipped_frames == 0 and \
+                    track.processed_frames % frame_step == 0:
                 data.append((self.tracks[j].trackId, self.tracks[j].trace[-1]))
         return data
 
@@ -295,7 +305,7 @@ class BeeTracker(object):
             _dh = getStatistics()
 
             # Y-Position of first detection
-            f_y = track.firstPosition[1]
+            f_y = track.first_position[1]
 
             # Y-Position of last detection
             l_y = lastPosition = track.trace[-1][1]
@@ -311,7 +321,7 @@ class BeeTracker(object):
             if f_y < pH and l_y >= pH:
                 _dh.addBeeOut()
 
-        del(self.tracks[trackId])
+        del self.tracks[trackId]
 
     def update(self, detections: list, groups: list):
         """! Update all the tracks with the given list of detections.
@@ -328,7 +338,7 @@ class BeeTracker(object):
             d = item[2]
             used_tracks.append(t)
             used_detections.append(d)
-            self.tracks[t]._lastDetect = detections[d]
+            self.tracks[t]._last_dectect = detections[d]
             self.tracks[t].correct(detections[d])
             self.tracks[t].skipped_frames = 0
             self.tracks[t].processed_frames += 1
@@ -338,9 +348,9 @@ class BeeTracker(object):
         for num_t, item_t in enumerate(self.tracks):
 
             # Check whether this track is under a group of bees
-            item_t.inGroup = False
+            item_t.in_group = False
             for g in groups:
-                item_t.inGroup |= pointInEllipse(item_t.trace[-1], g)
+                item_t.in_group |= pointInEllipse(item_t.trace[-1], g)
 
             # Prepare the tracks
             # Assume that each trach has missed a detection/frame
@@ -349,7 +359,7 @@ class BeeTracker(object):
 
             # If the bee is inside of a group, then recude the kalman gain
             # to slow it down.
-            if item_t.inGroup:
+            if item_t.in_group:
                 item_t.KF.x[1] = item_t.KF.x[1] * 0.5
                 item_t.KF.x[2] = item_t.KF.x[2] * 0.5
                 item_t.KF.x[4] = item_t.KF.x[4] * 0.5
@@ -361,8 +371,8 @@ class BeeTracker(object):
 
                 # Instead of only using the track prediction, try also to
                 #  match with tracks last position
-                if item_t.inGroup:
-                    lastValidPosition = item_t._lastDetect
+                if item_t.in_group:
+                    lastValidPosition = item_t._last_dectect
                     p_diff = (np.array([lastValidPosition[0],
                             lastValidPosition[1]]).reshape(-1,2) -
                             np.array(item_d[0:2]).reshape(-1,2))[0]
@@ -416,7 +426,7 @@ class BeeTracker(object):
 
             # This Track is inside of a bee-group, so it cannot be detected
             # As we can only assume were the bee is going, double the distance
-            if track.inGroup:
+            if track.in_group:
                 distance = self.dist_threshold *2
 
             by_dist = list(filter(lambda x: x[0] < self.dist_threshold, per_track))
@@ -460,19 +470,20 @@ class BeeTracker(object):
                 self._delTrack(num_t, count=True)
 
             # Remove tracks that hit the entry or exit of the hive and have a frame skip
-            elif self.isOutOfPane([self.tracks[num_t].lastPredict[0], \
-                    self.tracks[num_t].lastPredict[3]]):
+            elif self.isOutOfPane([self.tracks[num_t].last_predict[0], \
+                    self.tracks[num_t].last_predict[3]]):
                 self._delTrack(num_t, count=True)
 
         # Create tracks for unmatched detections
-        unmatched_detections = list(filter(lambda x: x not in used_detections, range(len(detections))))
+        unmatched_detections = list(filter(lambda x: x not in used_detections,
+                range(len(detections))))
         for item in unmatched_detections:
 
             # Only create new BeeTrack for bees that are on the pane
             if True:
                 track = BeeTrack(self.trackId)
                 track.setTrackName(random.choice(self.names))
-                track._lastDetect = detections[item]
+                track._last_dectect = detections[item]
                 self.tracks.append(track)
                 track.setPosition(detections[item])
                 self.trackId += 1

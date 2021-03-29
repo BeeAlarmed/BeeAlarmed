@@ -9,7 +9,7 @@
 # @section authors Author(s)
 # - Created by Fabian Hickert on december 2020
 #
-from Config import *
+from Utils import get_config, get_frame_config
 from pathlib import Path
 from queue import Queue
 import cv2
@@ -33,10 +33,13 @@ class ImageProvider(object):
         self.frame_config = None
         self._videoStream = None
         self._stopped = multiprocessing.Value('i', 0)
+        self._started = multiprocessing.Value('i', 0)
         self._process = None
+
 
         # Validate the frame_config
         max_w = max_h = 0
+        frame_config = get_frame_config()
         if not len(frame_config):
             raise BaseException("At least one frame config has to be provided!")
 
@@ -61,14 +64,15 @@ class ImageProvider(object):
         # Prepare for reading from video file
         self.frame_config = frame_config
         if video_file is not None:
-            self._queue = multiprocessing.Queue(maxsize=FRAME_SET_BUFFER_LENGTH_VIDEO)
+            self._queue = multiprocessing.Queue(maxsize=get_config("FRAME_SET_BUFFER_LENGTH_VIDEO"))
             vFile = Path(video_file)
             if not vFile.is_file():
                 raise BaseException("The given file '%s' doesn't seem to be valid!" % (video_file,))
         else:
-            self._queue = multiprocessing.Queue(maxsize=FRAME_SET_BUFFER_LENGTH_CAMERA)
+            self._queue = multiprocessing.Queue(maxsize=get_config("FRAME_SET_BUFFER_LENGTH_CAMERA"))
 
-        self._process = multiprocessing.Process(target=self._imgProcess, args=(self._queue, frame_config, video_source, video_file, self._stopped))
+        self._process = multiprocessing.Process(target=self._imgProcess,
+                args=(self._queue, frame_config, video_source, video_file, self._stopped, self._started))
         self._process.start()
 
     def getQueue(self):
@@ -76,6 +80,12 @@ class ImageProvider(object):
         @return Returns the queue object
         """
         return self._queue
+
+    def isStarted(self):
+        """! Returns whether the image processing started or not
+        @return Returns True if the process was started
+        """
+        return self._started.value
 
     def isDone(self):
         """! Returns whether the image processing still running or ended
@@ -97,19 +107,19 @@ class ImageProvider(object):
         self._process.join()
 
     @staticmethod
-    def _imgProcess(q_out, config, video_source, video_file, stopped):
+    def _imgProcess(q_out, config, video_source, video_file, stopped, started):
 
         # Ignore interrupts
         signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         # Open video stream
         if video_source == None:
-            _videoStream = cv2.VideoCapture(video_file)
             logger.info("Starting from video file input: %s" % (video_file,))
+            _videoStream = cv2.VideoCapture(video_file)
         else:
-            _videoStream = cv2.VideoCapture(video_source)
             logger.info("Starting from camera input")
-            w, h, f = CAMERA_INPUT_RESOLUTION
+            _videoStream = cv2.VideoCapture(video_source)
+            w, h, f = get_config("CAMERA_INPUT_RESOLUTION")
             if f != None:
                 fourcc = cv2.VideoWriter_fourcc(*f)
                 _videoStream.set(cv2.CAP_PROP_FOURCC, fourcc)
@@ -129,13 +139,17 @@ class ImageProvider(object):
                 # If the queue is full, then report it
                 if _skipped_cnt % 100 == 0:
                     logger.debug("Buffer reached %i" % (q_out.qsize(),))
-                time.sleep(FRAME_SET_FULL_PAUSE_TIME)
+                time.sleep(get_config("FRAME_SET_FULL_PAUSE_TIME"))
                 _skipped_cnt += 1
             else:
 
                 # There is still space in the queue, get a frame and process it
                 _start_t = time.time()
                 (_ret, _frame) = _videoStream.read()
+
+                if started.value == 0:
+                    started.value = 1
+
                 if _ret:
 
                     # Get the original shape

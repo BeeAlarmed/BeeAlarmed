@@ -15,123 +15,123 @@ from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
 from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import Activation
-from tensorflow.keras.layers import Dropout
+#from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Input
 from tensorflow.keras.optimizers import Adam
 
-chanDim = -1
-def buildVarroaBranch(inputShape):
+CHAN_DIM = -1
+def build_varroa_branch(input_shape):
     """! Creates the branch that detects varroa mite infestations
     """
-    x = layers.experimental.preprocessing.Rescaling(1./255)(inputShape)
-    x = Conv2D(64, (4, 4), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = BatchNormalization(axis=chanDim)(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= layers.experimental.preprocessing.Rescaling(1./255)(input_shape)
+    tmp_layer= Conv2D(64, (4, 4), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= BatchNormalization(axis=CHAN_DIM)(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Conv2D(32, (3, 3), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= Conv2D(32, (3, 3), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Conv2D(16, (3, 3), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= Conv2D(16, (3, 3), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    #x = Conv2D(32, (2, 2), padding="valid")(x)
-    #x = Activation("relu")(x)
-    #x = MaxPooling2D(pool_size=(2, 2))(x)
+    #tmp_layer= Conv2D(32, (2, 2), padding="valid")(tmp_layer)
+    #tmp_layer= Activation("relu")(tmp_layer)
+    #tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    #x = Conv2D(32, (2, 2), padding="valid")(x)
-    #x = Activation("relu")(x)
-    #x = MaxPooling2D(pool_size=(2, 2))(x)
+    #tmp_layer= Conv2D(32, (2, 2), padding="valid")(tmp_layer)
+    #tmp_layer= Activation("relu")(tmp_layer)
+    #tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Flatten()(x)
-    x = BatchNormalization(axis=chanDim)(x)
-    x = Dense(1)(x)
-    x = Activation("sigmoid", name="varroa_output")(x)
+    tmp_layer= Flatten()(tmp_layer)
+    tmp_layer= BatchNormalization(axis=CHAN_DIM)(tmp_layer)
+    tmp_layer= Dense(1)(tmp_layer)
+    tmp_layer= Activation("sigmoid", name="varroa_output")(tmp_layer)
 
-    return x
+    return tmp_layer
 
-def buildPollenBranch(inputShape):
+def build_pollen_branch(input_shape):
     """! Creates the branch that detects pollen packets
     """
-    x = layers.experimental.preprocessing.Rescaling(1./255)(inputShape)
-    x = Conv2D(32, (4, 4), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = BatchNormalization(axis=chanDim)(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= layers.experimental.preprocessing.Rescaling(1./255)(input_shape)
+    tmp_layer= Conv2D(32, (4, 4), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= BatchNormalization(axis=CHAN_DIM)(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Conv2D(16, (3, 3), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= Conv2D(16, (3, 3), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Flatten()(x)
-    x = BatchNormalization(axis=chanDim)(x)
-    x = Dense(1)(x)
-    x = Activation("sigmoid", name="pollen_output")(x)
+    tmp_layer= Flatten()(tmp_layer)
+    tmp_layer= BatchNormalization(axis=CHAN_DIM)(tmp_layer)
+    tmp_layer= Dense(1)(tmp_layer)
+    tmp_layer= Activation("sigmoid", name="pollen_output")(tmp_layer)
 
-    return x
+    return tmp_layer
 
-def buildWespenBranch(inputShape):
+def build_wespen_branch(input_shape):
     """! Creates the branch that detects wasps
     """
-    x = layers.experimental.preprocessing.Rescaling(1./255)(inputShape)
-    x = Conv2D(16, (4, 4), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = BatchNormalization(axis=chanDim)(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= layers.experimental.preprocessing.Rescaling(1./255)(input_shape)
+    tmp_layer= Conv2D(16, (4, 4), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= BatchNormalization(axis=CHAN_DIM)(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Conv2D(8, (3, 3), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= Conv2D(8, (3, 3), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Flatten()(x)
-    x = BatchNormalization()(x)
-    x = Dense(1)(x)
-    x = Activation("sigmoid", name="wespen_output")(x)
+    tmp_layer= Flatten()(tmp_layer)
+    tmp_layer= BatchNormalization()(tmp_layer)
+    tmp_layer= Dense(1)(tmp_layer)
+    tmp_layer= Activation("sigmoid", name="wespen_output")(tmp_layer)
 
-    return x
+    return tmp_layer
 
-def buildCoolingBranch(inputShape):
+def build_cooling_branch(input_shape):
     """! Created the branch that detects bees that are cooling the hive
     """
-    x = layers.experimental.preprocessing.Rescaling(1./255)(inputShape)
-    x = Conv2D(64, (2, 2), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = BatchNormalization(axis=chanDim)(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= layers.experimental.preprocessing.Rescaling(1./255)(input_shape)
+    tmp_layer= Conv2D(64, (2, 2), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= BatchNormalization(axis=CHAN_DIM)(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Conv2D(32, (3, 3), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= Conv2D(32, (3, 3), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Conv2D(16, (2, 2), padding="valid")(x)
-    x = Activation("relu")(x)
-    x = MaxPooling2D(pool_size=(2, 2))(x)
+    tmp_layer= Conv2D(16, (2, 2), padding="valid")(tmp_layer)
+    tmp_layer= Activation("relu")(tmp_layer)
+    tmp_layer= MaxPooling2D(pool_size=(2, 2))(tmp_layer)
 
-    x = Flatten()(x)
-    x = BatchNormalization(axis=chanDim)(x)
-    x = Dense(1)(x)
-    x = Activation("sigmoid", name="cooling_output")(x)
+    tmp_layer= Flatten()(tmp_layer)
+    tmp_layer= BatchNormalization(axis=CHAN_DIM)(tmp_layer)
+    tmp_layer= Dense(1)(tmp_layer)
+    tmp_layer= Activation("sigmoid", name="cooling_output")(tmp_layer)
 
-    return x
+    return tmp_layer
 
-def getBeeModel(img_height, img_width):
+def get_bee_model(img_height, img_width):
     """! Creates BeeModel and returns it
     """
-    inputShape = (img_height, img_width, 3)
-    inputs = Input(shape=inputShape, name="input")
+    input_shape = (img_height, img_width, 3)
+    inputs = Input(shape=input_shape, name="input")
 
-    pollenM = buildPollenBranch(inputs)
-    varroaM = buildVarroaBranch(inputs)
-    wespenM = buildWespenBranch(inputs)
-    coolingM = buildCoolingBranch(inputs)
+    pollen_m = build_pollen_branch(inputs)
+    varroa_m = build_varroa_branch(inputs)
+    wespen_m = build_wespen_branch(inputs)
+    cooling_m = build_cooling_branch(inputs)
 
     model = Model(
         inputs=inputs,
-        outputs=[varroaM, pollenM, wespenM, coolingM],
+        outputs=[varroa_m, pollen_m, wespen_m, cooling_m],
         name="beenet")
 
     losses = {
@@ -140,7 +140,7 @@ def getBeeModel(img_height, img_width):
             "wespen_output": tf.losses.BinaryCrossentropy(),
             "cooling_output": tf.losses.BinaryCrossentropy()
             }
-    lossWeights = {
+    loss_weights = {
             "varroa_output": 1.0,
             "pollen_output": 1.0,
             "wespen_output": 1.0,
@@ -153,7 +153,7 @@ def getBeeModel(img_height, img_width):
          optimizer=opt,
          loss=losses,
          metrics=["accuracy"],
-         loss_weights=lossWeights,
+         loss_weights=loss_weights,
          )
 
     return model

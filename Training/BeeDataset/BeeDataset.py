@@ -1,9 +1,8 @@
 """BeeDataset dataset."""
-
-import tensorflow as tf
-import tensorflow_datasets as tfds
 import json
 import random
+import tensorflow as tf
+import tensorflow_datasets as tfds
 
 _DESCRIPTION = """
 # Bee Dataset
@@ -32,21 +31,21 @@ _CITATION = """
 
 
 class BeeDatasetConfig(tfds.core.BuilderConfig):
-  """BuilderConfig for the BeeDataset
+    """BuilderConfig for the BeeDataset
 
-    Args:
-      image_width (int): Desired image width
-      image_height (int): Desired image heigth
-  """
+      Args:
+        image_width (int): Desired image width
+        image_height (int): Desired image heigth
+    """
 
-  def __init__(self,
-               image_height=300,
-               image_width=150,
-               **kwargs):
-    super(BeeDatasetConfig, self).__init__(**kwargs)
-    self._width = image_width
-    self._height = image_height
-    self._depth = 3
+    def __init__(self,
+                 image_height=300,
+                 image_width=150,
+                 **kwargs):
+        super().__init__(**kwargs)
+        self.width = image_width
+        self.height = image_height
+        self.depth = 3
 
 
 class BeeDataset(tfds.core.GeneratorBasedBuilder):
@@ -84,9 +83,9 @@ class BeeDataset(tfds.core.GeneratorBasedBuilder):
 
     def _info(self) -> tfds.core.DatasetInfo:
         """Returns the dataset metadata."""
-        t_shape = (self.builder_config._height, self.builder_config._width, self.builder_config._depth)
+        t_shape = (self.builder_config.height, self.builder_config.width, self.builder_config.depth)
         features = tfds.features.FeaturesDict({
-            'input': tfds.features.Image(shape=(self.builder_config._height, self.builder_config._width, 3)),
+            'input': tfds.features.Image(shape=t_shape),
             'output': {
                 'varroa_output': tf.float64,
                 'pollen_output': tf.float64,
@@ -112,7 +111,6 @@ class BeeDataset(tfds.core.GeneratorBasedBuilder):
                 }
 
     def _generate_examples(self, path):
-        target_size = [self.builder_config._height, self.builder_config._width]
         with open(path / "data.json") as json_file:
             data = json.load(json_file)
 
@@ -126,9 +124,9 @@ class BeeDataset(tfds.core.GeneratorBasedBuilder):
                 for lbl in ["varroa", "pollen", "wespen", "cooling"]:
                     labels.append(1.0 if entry[lbl] else 0.0)
 
-                img = path / str("images_%i" % (self.builder_config._height,)) / name
+                img = path / str("images_%i" % (self.builder_config.height,)) / name
 
-                yield name+str(self.builder_config._height), {
+                yield name+str(self.builder_config.height), {
                         "input": img,
                         "output": {
                             'varroa_output': labels[0],

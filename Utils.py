@@ -8,13 +8,39 @@
 # @section authors Author(s)
 # - Created by Fabian Hickert on december 2020
 #
-from Config import *
 import math
 import imutils
 import cv2
 import csv
+import yaml
+import argparse
 
 _woman_names = None
+
+__cfg = None
+def get_config(attribute):
+    global __cfg
+    """! Returns an object containing the project configuration
+    """
+
+    if __cfg is None:
+        with open('config.yaml') as f:
+            __cfg = yaml.load(f, Loader=yaml.FullLoader)
+
+    if attribute in __cfg:
+        return __cfg[attribute]
+    else:
+        raise("Unknown config attribute: '%s'" % (attribute,))
+    return None
+
+
+def get_args():
+    """! Prepares and parses the command arguments
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--noPreview", help="Run without producing any visual output", action="store_true")
+    parser.add_argument("--video", help="Do not run on camera, use provided video file instead")
+    return parser.parse_args()
 
 def loadWomanNames():
     """! Loads the bee names from 'Namen/Namen.list' and returns them as list
@@ -53,10 +79,10 @@ def cutEllipseFromImage(el, img, pad, scale=1):
 
     # Get desired width/height
     w = h = 0
-    if NN_EXTRACT_RESOLUTION == EXT_RES_150x300:
+    if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_150x300":
         w = 150
         h = 300
-    elif NN_EXTRACT_RESOLUTION == EXT_RES_75x150:
+    elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
         w = 75
         h = 150
     else:
@@ -148,3 +174,25 @@ def pointInEllipse(p, e):
     t2 = sin_a*(xp - xe) - cos_a*(yp - ye)
     res = ((t1*t1)/(rex*rex)) + ((t2*t2)/(rey * rey))
     return  res <= 1
+
+
+def get_frame_config():
+    """! Returns a configuration for the image provider on how
+         to prepare and provide the captured frames
+    """
+    frame_config = None
+    if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
+        frame_config = (
+                        (540, 960, cv2.IMREAD_UNCHANGED),
+                        (180, 320,  cv2.IMREAD_UNCHANGED)
+                    )
+    elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_150x300":
+        frame_config = (
+                        (1080, 1920, cv2.IMREAD_UNCHANGED),
+                        (540, 960, cv2.IMREAD_UNCHANGED),
+                        (180, 320,  cv2.IMREAD_UNCHANGED)
+                    )
+    else:
+        raise BaseException("Wrong image extraction setting")
+
+    return frame_config

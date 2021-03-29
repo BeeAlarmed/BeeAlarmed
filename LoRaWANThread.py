@@ -7,13 +7,13 @@
 # @section authors Author(s)
 # - Created by Fabian Hickert on december 2020
 #
-from Config import *
 from threading import Thread
 from Statistics import getStatistics
 import time
 import logging
 from serial import Serial
 import struct
+from Utils import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -62,19 +62,19 @@ class LoRaWANThread(Thread):
                 pass
 
         # Put the transeiver into a defined state
-        self._ser = Serial(RN2483A_USB_PORT, 57600, timeout=60)
+        self._ser = Serial(get_config("RN2483A_USB_PORT"), 57600, timeout=60)
         self._sendCmd("sys reset")
         self._sendCmd("sys factoryRESET")
         self._sendCmd("radio set freq 868000000")
 
         # Get channels
-        channel_config = LORAWAN_CHANNEL_CONFIG
+        channel_config = get_config("LORAWAN_CHANNEL_CONFIG")
 
         # Calculate Duty Cycle limitation
         # The 868 band has a 1% cycle, rn2483 has a duty-cycle per channel
         # this means the duty cycle per channel has to be shorter than 1%
         # Instead of 99% off, the channels have a (100% - (1 / channel-count)) dty-cylce
-        if LORAWAN_DISABLE_DUTY_CYCLE_CHECKS:
+        if get_config("LORAWAN_DISABLE_DUTY_CYCLE_CHECKS"):
             dty = 9
         else:
             dty = int((100 - (1 / len(channel_config))) * 10)
@@ -87,9 +87,9 @@ class LoRaWANThread(Thread):
             self._sendCmd("mac set ch status %i on" % (ch[0],))
 
         # Set connection details
-        self._sendCmd("mac set devaddr %s" % (LORAWAN_DEVADDR,))
-        self._sendCmd("mac set nwkskey %s" % (LORAWAN_NET_SESSION_KEY,))
-        self._sendCmd("mac set appskey %s" % (LORAWAN_APP_SESSION_KEY,))
+        self._sendCmd("mac set devaddr %s" % (get_config("LORAWAN_DEVADDR"),))
+        self._sendCmd("mac set nwkskey %s" % (get_config("LORAWAN_NET_SESSION_KEY"),))
+        self._sendCmd("mac set appskey %s" % (get_config("LORAWAN_APP_SESSION_KEY"),))
         self._sendCmd("mac set sync 34")
 
         # Save settings

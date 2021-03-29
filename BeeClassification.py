@@ -7,12 +7,14 @@
 # @section authors Author(s)
 # - Created by Fabian Hickert on december 2020
 #
-from Config import *
+from Utils import get_config
 from os import listdir, makedirs
 from os.path import isfile, join, exists
 from datetime import datetime
+import cv2
 import time
 import multiprocessing
+import logging
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +24,7 @@ class BeeClassification(object):
           one to queue to incoming images that have to be processed by the
           neural network and a second one, where the results are put.
     """
+
     def __init__(self):
 
         """! Initializes the neural network and the queues
@@ -45,6 +48,7 @@ class BeeClassification(object):
         while self._ready.value == 0:
             time.sleep(1)
             logger.debug("Waiting for neural network, this may take up to two minutes")
+        logger.debug("Classification terminated")
 
     def getQueue(self):
         """! Returns the queue-object for the icoming queue
@@ -99,12 +103,17 @@ class BeeClassification(object):
         session = tf.compat.v1.InteractiveSession(config=config)
 
         # Load the model
-        _model = tf.keras.models.load_model(NN_MODEL_FOLDER)
+        try:
+            _model = tf.keras.models.load_model(get_config("NN_MODEL_FOLDER"))
+        except Exception as e:
+            ready.value = True
+            logger.error("Failed to load Model: %s" % (e,))
+            return
 
         # Detect desired image size for classification
         img_height = 300
         img_width = 150
-        if NN_EXTRACT_RESOLUTION == EXT_RES_75x150:
+        if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
             img_height = 150
             img_width = 75
 
@@ -129,11 +138,13 @@ class BeeClassification(object):
         ready.value = True
 
         # Create folders to store images with positive results
-        if SAVE_DETECTION_IMAGES:
-            for lbl in ["varroa", "pollen", "wespe", "cooling"]:
-                if not exists(join(SAVE_DETECTION_PATH, lbl)):
-                    makedirs(join(SAVE_DETECTION_PATH, lbl))
+        if get_config("SAVE_DETECTION_IMAGES"):
+            for lbl in ["varroa", "pollen", "wasps", "cooling"]:
+                s_path = get_config("SAVE_DETECTION_PATH")
+                if not exists(join(s_path, lbl)):
+                    makedirs(join(s_path, lbl))
 
+        classify_thres = get_config("CLASSIFICATION_THRESHOLDS")
         while stopped.value == 0:
 
             # While the image classification queue is not empty
@@ -172,16 +183,15 @@ class BeeClassification(object):
 
                         # Create dict with results
                         entry = set([])
-                        for lbl_id, lbl in enumerate(["varroa", "pollen", "wespe", "cooling"]):
-                            thres, tag = CLASSIFICATION_THRESHOLDS[lbl]
-                            if results[lbl_id][num][0] > thres:
-                                entry.add(tag)
+                        for lbl_id, lbl in enumerate(["varroa", "pollen", "wasps", "cooling"]):
+                            if results[lbl_id][num][0] > classify_thres[lbl]:
+                                entry.add(lbl)
 
                                 # Save the corresponding image on disc
-                                if SAVE_DETECTION_IMAGES and tag in SAVE_DETECTION_TYPES:
+                                if get_config("SAVE_DETECTION_IMAGES") and lbl in get_config("SAVE_DETECTION_TYPES"):
                                     img = images[num]
                                     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-                                    cv2.imwrite(SAVE_DETECTION_PATH + "/%s/%i-%s.jpeg" % (lbl, _process_cnt, \
+                                    cv2.imwrite(get_config("SAVE_DETECTION_PATH") + "/%s/%i-%s.jpeg" % (lbl, _process_cnt, \
                                             datetime.now().strftime("%Y%m%d-%H%M%S")), img)
 
                         # Push results back

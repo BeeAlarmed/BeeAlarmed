@@ -7,7 +7,6 @@
 # @section authors Author(s)
 # - Created by Fabian Hickert on december 2020
 #
-from Config import *
 from collections import deque
 
 class Statistics(object):
@@ -63,39 +62,39 @@ class Statistics(object):
 
     def addDetection(self, tag):
         """! Adds a detected bee charcteristic by tag
-             @param tag any of (TAG_WESPE, TAG_VARROA, TAG_POLLEN, TAG_COOLING)
+             @param tag any of ("wasps", "varroa", "pollen", "cooling")
         """
-        if TAG_WESPE == tag:
+        if "wasps" == tag:
             self._wespenCount += 1
             self._wespenCountOverall += 1
-        if TAG_VARROA == tag:
+        if "varroa" == tag:
             self._varroaCount += 1
             self._varroaCountOverall += 1
-        if TAG_POLLEN == tag:
+        if "pollen" == tag:
             self._pollenCount += 1
             self._pollenCountOverall += 1
-        if TAG_COOLING == tag:
+        if "cooling" == tag:
             self._coolingCount += 1
             self._coolingCountOverall += 1
 
     def addClassificationResult(self, trackId, result):
         """! Adds a detected bee charcteristic by classification results
              @param trackId unused
-             @param result  A set containing any combination of (TAG_WESPE, TAG_VARROA, TAG_POLLEN, TAG_COOLING=
+             @param result  A set containing any combination of ("wasps", "varroa", "pollen", "cooling"=
         """
-        if TAG_WESPE in result:
-            self.addDetection(TAG_WESPE)
-        if TAG_VARROA in result:
-            self.addDetection(TAG_VARROA)
-        if TAG_POLLEN in result:
-            self.addDetection(TAG_POLLEN)
-        if TAG_COOLING in result:
-            self.addDetection(TAG_COOLING)
+        if "wasps" in result:
+            self.addDetection("wasps")
+        if "varroa" in result:
+            self.addDetection("varroa")
+        if "pollen" in result:
+            self.addDetection("pollen")
+        if "cooling" in result:
+            self.addDetection("cooling")
 
     def addClassificationResultByTag(self, trackId, tag):
         """! Adds a detected bee charcteristic by tag
              @param trackId unused
-             @param tag  any of TAG_WESPE, TAG_VARROA, TAG_POLLEN, TAG_COOLING
+             @param tag  any of "wasps", "varroa", "pollen", "cooling"
         """
         self.addDetection(tag)
 

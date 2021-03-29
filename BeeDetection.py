@@ -1,8 +1,8 @@
-from Config import *
 import cv2
 import logging
 import numpy as np
 import math
+from Utils import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,8 @@ def detect_bees(frame, scale):
 
     # Blur Image and perform a binary thresholding
     o = cv2.GaussianBlur(o, (9,9), 9)
-    _, o = cv2.threshold(o, BINARY_THRESHOLD_VALUE, BINARY_THRESHOLD_MAX, cv2.THRESH_BINARY)
+    _, o = cv2.threshold(o, get_config("BINARY_THRESHOLD_VALUE"), \
+            get_config("BINARY_THRESHOLD_MAX"), cv2.THRESH_BINARY)
 
     # Invert result
     o = 255 -o
@@ -50,12 +51,14 @@ def detect_bees(frame, scale):
 
             # Only use ellipses with minium size
             ellipseArea = area(e)
-            if ellipseArea > DETECT_ELLIPSE_AREA_MIN_SIZE and ellipseArea < DETECT_ELLIPSE_AREA_MAX_SIZE:
+            if ellipseArea > get_config("DETECT_ELLIPSE_AREA_MIN_SIZE") \
+                    and ellipseArea < get_config("DETECT_ELLIPSE_AREA_MAX_SIZE"):
 
                 # Scale ellipse to desired size
                 e = ((e[0][0] * scale, e[0][1] * scale), (e[1][0] * scale, e[1][1] * scale), e[2])
                 ellipses.append(e)
-            elif ellipseArea > DETECT_GROUP_AREA_MIN_SIZE  and ellipseArea < DETECT_GROUP_AREA_MAX_SIZE:
+            elif ellipseArea > get_config("DETECT_GROUP_AREA_MIN_SIZE") and \
+                    ellipseArea < get_config("DETECT_GROUP_AREA_MAX_SIZE"):
 
                 # Scale ellipse to desired size
                 e = ((e[0][0] * scale, e[0][1] * scale), (e[1][0] * scale, e[1][1] * scale), e[2])

@@ -57,7 +57,7 @@ Just check out this repository and install the dependencies:
 pip3 install -r requirements.txt
 ```
 
-Download the pre trained neural network and unzip it to ./SavedModel: <a href="https://fh-swf.sciebo.de/remote.php/webdav/GitHub/SavedModel_20201121.zip">SavedModel_20201121.zip</a>
+Download the pre trained neural network and unzip it to ./SavedModel: <a href="https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=SavedModel_20201121.zip">SavedModel_20201121.zip</a>
 
 ```
 wget "https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=SavedModel_20201121.zip" -O SavedModel_20201121.zip

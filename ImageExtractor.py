@@ -8,8 +8,7 @@
 # @section authors Author(s)
 # - Created by Fabian Hickert on december 2020
 #
-from Utils import cutEllipseFromImage
-from Config import *
+from Utils import cutEllipseFromImage, get_config
 import time
 import logging
 import cv2
@@ -99,8 +98,9 @@ class ImageExtractor(object):
         _process_cnt = 0
 
         # Prepare save path
-        if SAVE_EXTRACTED_IMAGES and not exists(SAVE_EXTRACTED_IMAGES_PATH):
-            makedirs(SAVE_EXTRACTED_IMAGES_PATH)
+        e_path = get_config("SAVE_EXTRACTED_IMAGES_PATH")
+        if get_config("SAVE_EXTRACTED_IMAGES") and not exists(e_path):
+            makedirs(e_path)
 
         while stopped.value == 0:
             if not in_q.empty():
@@ -123,10 +123,10 @@ class ImageExtractor(object):
                     if type(img) != type(None):
 
                         # Filter by minimum sharpness
-                        if sharpness > EXTRACT_MIN_SHARPNESS:
+                        if sharpness > get_config("EXTRACT_MIN_SHARPNESS"):
 
                             # Forward the image to the classification process (if its running)
-                            if NN_ENABLE:
+                            if get_config("NN_ENABLE"):
                                 if out_q.full():
                                     logger.debug("Classifier Queue full")
                                     # Remove oldest entry to add a new one
@@ -134,8 +134,8 @@ class ImageExtractor(object):
                                 out_q.put((trackId, img))
 
                             # Save the image in case its requested
-                            if SAVE_EXTRACTED_IMAGES:
-                                cv2.imwrite(SAVE_EXTRACTED_IMAGES_PATH + "/%i-%s.jpeg" % (_process_cnt, datetime.datetime.now().strftime("%Y%m%d-%H%M%S")), img)
+                            if get_config("SAVE_EXTRACTED_IMAGES"):
+                                cv2.imwrite(e_path + "/%i-%s.jpeg" % (_process_cnt, datetime.datetime.now().strftime("%Y%m%d-%H%M%S")), img)
 
                 _process_time += time.time() - _start_t
 

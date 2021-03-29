@@ -9,14 +9,13 @@
 # - Created by Fabian Hickert, 2021
 #
 
-import BeeDataset.BeeDataset
-import BeeModel
-import datetime
 import tensorflow as tf
-
 import tensorflow_datasets as tfds
+import BeeModel
+import BeeDataset
 
 # Allow growth
+#pylint: disable=no-member
 config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
 session = tf.compat.v1.InteractiveSession(config=config)
@@ -26,10 +25,13 @@ CFG = BeeDataset.BeeDataset.BEE_CFG_150
 MODEL_SAVE_PATH = "SavedModel"
 
 # Load via TFDS
-train, val = tfds.load('bee_dataset/'+CFG.name, batch_size=100, as_supervised=True, split=["train[0%:50%]", "train[50%:100%]"])
+train, val = tfds.load('bee_dataset/'+CFG.name,
+        batch_size=100,
+        as_supervised=True,
+        split=["train[0%:50%]", "train[50%:100%]"])
 
 # Get the BeeModel and train it
-model = BeeModel.getBeeModel(CFG._height, CFG._width)
+model = BeeModel.getBeeModel(CFG.height, CFG.width)
 model.fit(
          train,
          validation_data=val,
