@@ -111,10 +111,10 @@ class BeeDataset(tfds.core.GeneratorBasedBuilder):
                 }
 
     def _generate_examples(self, path):
-        with open(path / "data.json") as json_file:
-            data = json.load(json_file)
+        with tf.io.gfile.GFile(path / "data.json") as json_file:
 
             # Load labels and image path
+            data = json.loads(json_file.read())
             indexes = list(data.keys())
             random.shuffle(indexes)
             for name in indexes:
