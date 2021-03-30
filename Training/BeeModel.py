@@ -74,7 +74,7 @@ def build_pollen_branch(input_shape):
 
     return tmp_layer
 
-def build_wespen_branch(input_shape):
+def build_wasps_branch(input_shape):
     """! Creates the branch that detects wasps
     """
     tmp_layer= layers.experimental.preprocessing.Rescaling(1./255)(input_shape)
@@ -90,7 +90,7 @@ def build_wespen_branch(input_shape):
     tmp_layer= Flatten()(tmp_layer)
     tmp_layer= BatchNormalization()(tmp_layer)
     tmp_layer= Dense(1)(tmp_layer)
-    tmp_layer= Activation("sigmoid", name="wespen_output")(tmp_layer)
+    tmp_layer= Activation("sigmoid", name="wasps_output")(tmp_layer)
 
     return tmp_layer
 
@@ -126,24 +126,24 @@ def get_bee_model(img_height, img_width):
 
     pollen_m = build_pollen_branch(inputs)
     varroa_m = build_varroa_branch(inputs)
-    wespen_m = build_wespen_branch(inputs)
+    wasps_m = build_wasps_branch(inputs)
     cooling_m = build_cooling_branch(inputs)
 
     model = Model(
         inputs=inputs,
-        outputs=[varroa_m, pollen_m, wespen_m, cooling_m],
+        outputs=[varroa_m, pollen_m, wasps_m, cooling_m],
         name="beenet")
 
     losses = {
             "varroa_output": tf.losses.BinaryCrossentropy(),
             "pollen_output": tf.losses.BinaryCrossentropy(),
-            "wespen_output": tf.losses.BinaryCrossentropy(),
+            "wasps_output": tf.losses.BinaryCrossentropy(),
             "cooling_output": tf.losses.BinaryCrossentropy()
             }
     loss_weights = {
             "varroa_output": 1.0,
             "pollen_output": 1.0,
-            "wespen_output": 1.0,
+            "wasps_output": 1.0,
             "cooling_output": 1.0
             }
 

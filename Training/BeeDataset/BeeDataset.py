@@ -89,7 +89,7 @@ class BeeDataset(tfds.core.GeneratorBasedBuilder):
             'output': {
                 'varroa_output': tf.float64,
                 'pollen_output': tf.float64,
-                'wespen_output': tf.float64,
+                'wasps_output': tf.float64,
                 'cooling_output': tf.float64,
                 }
             })
@@ -121,7 +121,7 @@ class BeeDataset(tfds.core.GeneratorBasedBuilder):
                 labels = []
                 entry = data[name]
 
-                for lbl in ["varroa", "pollen", "wespen", "cooling"]:
+                for lbl in ["varroa", "pollen", "wasps", "cooling"]:
                     labels.append(1.0 if entry[lbl] else 0.0)
 
                 img = path / str("images_%i" % (self.builder_config.height,)) / name
@@ -131,7 +131,7 @@ class BeeDataset(tfds.core.GeneratorBasedBuilder):
                         "output": {
                             'varroa_output': labels[0],
                             'pollen_output': labels[1],
-                            'wespen_output': labels[2],
+                            'wasps_output': labels[2],
                             'cooling_output': labels[3]
                             }
                         }

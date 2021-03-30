@@ -31,7 +31,7 @@ train, val = tfds.load('bee_dataset/'+CFG.name,
         split=["train[0%:50%]", "train[50%:100%]"])
 
 # Get the BeeModel and train it
-model = BeeModel.getBeeModel(CFG.height, CFG.width)
+model = BeeModel.get_bee_model(CFG.height, CFG.width)
 model.fit(
          train,
          validation_data=val,
