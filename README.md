@@ -30,7 +30,7 @@ Each detected bee will then be cut from the image, rotated and forwarded to a ne
 
 <img src="readmeFiles/varroa.jpeg" alt="Detected Varroa" width="100" />
 
-`A infested by a varroa mite. In fact its infected by two mites.`
+`A bee infested by varroa mites.`
 
 <img src="readmeFiles/cooling.jpeg" alt="Detected bees colling the hive" width="100" />
 
@@ -57,18 +57,18 @@ Just check out this repository and install the dependencies:
 pip3 install -r requirements.txt
 ```
 
-Download the pre trained neural network and unzip it to ./SavedModel: <a href="https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=SavedModel_20201121.zip">SavedModel_20201121.zip</a>
+Download the pre trained neural network and unzip it to ./SavedModel: <a href="https://raspbee.de/FH/Github/SavedModel_20201121.zip">SavedModel_20201121.zip</a>
 
 ```
-wget "https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=SavedModel_20201121.zip" -O SavedModel_20201121.zip
+wget "https://raspbee.de/FH/Github/SavedModel_20201121.zip" -O SavedModel_20201121.zip
 unzip SavedModel_20201121.zip -d ./SavedModel
 ```
 Note: _I will publish the dataset and neural network once I finished working on them. The dataset is currently based on manually selected and annotated images (>6000)._
 
-Download the example video file: <a href="https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=cooling_varroa_small.avi">Sample Video</a> (314 MB)
+Download the example video file: <a href="https://raspbee.de/FH/Github/cooling_varroa_small.avi">Sample Video</a> (314 MB)
 
 ```
-wget "https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=cooling_varroa_small.avi"
+wget "https://raspbee.de/FH/Github/cooling_varroa_small.avi"
 ```
 
 Now start the monitoring system by calling:
@@ -80,7 +80,7 @@ python3 main.py --video=./cooling_varroa_small.avi
 This is what you should get:
 
 <video controls>
-  <source src="https://fh-swf.sciebo.de/s/EyFjXWHScSyFwPk/download?path=%2F&files=example_output_small_s.mp4"
+  <source src="https://raspbee.de/FH/Github/example_output_small_s.mp4"
   type="video/mp4">
 </video>
 <img src="readmeFiles/varroa_detect.png" alt="Detected Varroa" />
