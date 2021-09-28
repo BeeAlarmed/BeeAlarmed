@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """! @brief This python file allows to train the BeeModel"""
 ##
 # @file train_network.py
