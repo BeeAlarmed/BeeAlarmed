@@ -1,0 +1,3 @@
+[submodule "Training/BeeDataset"]
+	path = Training/BeeDataset
+	url = git@github.com:BeeAlarmed/BeeDataset.git
