@@ -26,9 +26,9 @@ print("="*30)
 
 # Allow growth
 #pylint: disable=no-member
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.allow_growth = True
-session = tf.compat.v1.InteractiveSession(config=config)
+#config = tf.compat.v1.ConfigProto()
+#config.gpu_options.allow_growth = True
+#session = tf.compat.v1.InteractiveSession(config=config)
 
 MODEL_SAVE_PATH = "SavedModel"
 

@@ -54,6 +54,10 @@ Look close, you can see the varroa mite.
 Just check out this repository and install the dependencies:
 
 ```
+git clone https://github.com/BeeAlarmed/BeeAlarmed.git
+cd BeeAlarmed
+git submodule init
+git submodule update
 pip3 install -r requirements.txt
 ```
 
