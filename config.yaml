@@ -164,6 +164,9 @@ CLASSIFICATION_THRESHOLDS: {
 ## LORAWAN
 ##
 
+# Enable or disable LoRaWAN with the RN2483A
+RN2483A_LORA_ENABLE:                      False
+
 # The USB port where the RN2483A is connected to
 RN2483A_USB_PORT:                         "/dev/ttyUSB0"
 

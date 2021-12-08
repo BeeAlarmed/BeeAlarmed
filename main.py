@@ -39,7 +39,9 @@ def main():
         imgClassifier = BeeClassification()
 
     # Create processes and connect message queues between them
-    lorawan = LoRaWANThread()
+    lorawan = None
+    if get_config("RN2483A_LORA_ENABLE"):
+        lorawan = LoRaWANThread()
     imgExtractor = ImageExtractor()
     imgConsumer = ImageConsumer()
     imgConsumer.setImageQueue(imgProvider.getQueue())
@@ -53,7 +55,8 @@ def main():
         # Start the processes
         imgConsumer.start()
         imgExtractor.start()
-        lorawan.start()
+        if lorawan is not None:
+            lorawan.start()
 
         # Quit program if end of video-file is reached or
         # the camera got disconnected
@@ -65,7 +68,8 @@ def main():
     except (KeyboardInterrupt, SystemExit):
 
         # Tear down all running process to ensure that we don't get any zombies
-        lorawan.stop()
+        if lorawan is not None:
+            lorawan.stop()
         imgProvider.stop()
         imgExtractor.stop()
         imgConsumer.stop()
