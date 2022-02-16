@@ -48,7 +48,7 @@ def loadWomanNames():
     global _woman_names
     if type(_woman_names) == type(None):
         _woman_names = []
-        with open('Namen/Namen.list') as _file:
+        with open('Namen/BigNameList') as _file:
             _woman_names = _file.readlines()
 
         # Remove newline character

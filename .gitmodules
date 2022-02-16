@@ -1,3 +1,6 @@
 [submodule "Training/BeeDataset"]
 	path = Training/BeeDataset
-	url = git@github.com:BeeAlarmed/BeeDataset.git
+	url = https://github.com/BeeAlarmed/BeeDataset.git
+[submodule "Namen"]
+	path = Namen
+	url = https://github.com/miweru/Namelist.git
