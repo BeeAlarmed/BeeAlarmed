@@ -4,3 +4,4 @@ filterpy
 imutils
 pyserial
 pyyaml
+tensorflow-datasets
