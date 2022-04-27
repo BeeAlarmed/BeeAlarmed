@@ -48,11 +48,15 @@ def loadWomanNames():
     global _woman_names
     if type(_woman_names) == type(None):
         _woman_names = []
-        with open('Namen/BigNameList') as _file:
+        with open('Names/Vornamen_2018_Koeln.csv', encoding="utf8", errors="ignore") as _file:
             _woman_names = _file.readlines()
+        
+        # Only use popular woman names
+        _woman_names = map(lambda x: x.strip().split(";"), _woman_names)
+        _woman_names = filter(lambda x: x[2] == "w" and int(x[0]) > 5, _woman_names)
+        _woman_names = map(lambda x: x[1], _woman_names)
 
-        # Remove newline character
-        _woman_names = [line[:-1] for line in _woman_names]
+    _woman_names = list(_woman_names)
     return _woman_names
 
 def variance_of_laplacian(image):
