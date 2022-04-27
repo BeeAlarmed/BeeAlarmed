@@ -71,6 +71,8 @@ Note: _I will publish the dataset and neural network once I finished working on 
 
 Download the example video file: <a href="https://raspbee.de/FH/Github/cooling_varroa_small.avi">Sample Video</a> (314 MB)
 
+**More videos can be found at YouTube: <a href="https://www.youtube.com/channel/UCpw-FKrTnD0F_UrC_hjI34g/videos">YouTube Channel: Raspbee - Videos</a>**
+
 ```
 wget "https://raspbee.de/FH/Github/cooling_varroa_small.avi"
 ```
