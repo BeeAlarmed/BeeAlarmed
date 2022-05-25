@@ -128,9 +128,9 @@ class ImageConsumer(Thread):
                     data = tracker.getLastBeePositions(get_config("EXTRACT_FAME_STEP"))
                     if len(data) and type(self._extractQueue) != type(None):
                         if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_150x300":
-                            self._extractQueue.put((data, img_1080, 2))
+                            self._extractQueue.put((data, img_1080, 2, _process_cnt))
                         elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
-                            self._extractQueue.put((data, img_540, 1))
+                            self._extractQueue.put((data, img_540, 1, _process_cnt))
                         else:
                             raise("Unknown setting for EXT_RES_75x150, expected EXT_RES_150x300 or EXT_RES_75x150")
 
@@ -161,6 +161,8 @@ class ImageConsumer(Thread):
                     if get_config("SAVE_AS_VIDEO"):
                         if type(writer) == type(None):
                             h, w, c = draw_on.shape
+
+                            #TODO: Set real Framerate from video input or from video stream
                             writer = cv2.VideoWriter(get_config("SAVE_AS_VIDEO_PATH"), \
                                     cv2.VideoWriter_fourcc(*'MJPG'), 18, (w, h))
                         writer.write(draw_on)
