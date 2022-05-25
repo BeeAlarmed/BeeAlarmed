@@ -109,7 +109,7 @@ class ImageExtractor(object):
                 _process_cnt += 1
 
                 # Read one entry from the process queue
-                data, image, scale = in_q.get()
+                data, image, scale, frame_id = in_q.get()
 
                 # Extract the bees from the image
                 for item in data:
@@ -131,7 +131,7 @@ class ImageExtractor(object):
                                     logger.debug("Classifier Queue full")
                                     # Remove oldest entry to add a new one
                                     out_q.get()
-                                out_q.put((trackId, img))
+                                out_q.put((trackId, img, frame_id))
 
                             # Save the image in case its requested
                             if get_config("SAVE_EXTRACTED_IMAGES"):

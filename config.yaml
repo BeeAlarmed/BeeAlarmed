@@ -76,7 +76,7 @@ DRAW_IN_OUT_STATS:                       True
 ENABLE_TRACKING:                         True
 
 # Number of waypoints to store for each track
-MAX_BEE_TRACE_LENGTH:                    10000
+MAX_BEE_TRACE_LENGTH:                    20
 
 
 ##
@@ -145,18 +145,23 @@ SAVE_DETECTION_PATH:         "Detections"
 
 # Defines which images shall be saved
 # any of "varroa", "pollen", "wespe", "cooling"
-SAVE_DETECTION_TYPES:        ["cooling", "varroa"]
+SAVE_DETECTION_TYPES:        ["varroa", "pollen"]
+
+  # Resolution for image extraction (see: SAVE_EXTRACTED_IMAGES) 
+# Can be either EXT_RES_75x150 or EXT_RES_150x300
+NN_EXTRACT_RESOLUTION:       "EXT_RES_150x300"
 
 # Resolution of the images passed to the classification network
 # Can be either EXT_RES_75x150 or EXT_RES_150x300
-NN_EXTRACT_RESOLUTION:       EXT_RES_75x150
+# Cannot be higher than NN_EXTRACT_RESOLUTION
+NN_CLASSIFY_RESOLUTION:       "EXT_RES_75x150"
 
 # Classification result thresholds
 CLASSIFICATION_THRESHOLDS: {
-        'pollen':   0.90,
+        'pollen':   0.9999,
         'varroa':   0.95,
         'wasps':    0.80,
-        'cooling':  0.90
+        'cooling':  0.92
     }
 
 

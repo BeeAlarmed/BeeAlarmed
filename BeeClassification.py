@@ -113,7 +113,7 @@ class BeeClassification(object):
         # Detect desired image size for classification
         img_height = 300
         img_width = 150
-        if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
+        if get_config("NN_CLASSIFY_RESOLUTION") == "EXT_RES_75x150":
             img_height = 150
             img_width = 75
 
@@ -155,20 +155,22 @@ class BeeClassification(object):
                 _process_cnt += 1
 
                 images = []
+                images_orig = []
                 tracks = []
 
                 # Load the images from the in-queue and prepare them for the use in the network
                 failed = False
                 while not q_in.empty() and len(images) < 20 and stopped.value == 0:
                     item = q_in.get()
-                    t, img = item
+                    t, img, frame_id = item
 
                     # Change color from BGR to RGB
+                    images_orig.append(img)
                     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     if img.shape != (img_height, img_width, 3):
                         img = tf.image.resize(img, [img_height, img_width])
                     images.append(img)
-                    tracks.append(t)
+                    tracks.append((t, frame_id))
 
                 # Quit process if requested
                 if stopped.value != 0:
@@ -179,7 +181,9 @@ class BeeClassification(object):
                     results = _model.predict_on_batch(tf.convert_to_tensor(images))
 
                     # precess results
-                    for num, track in enumerate(tracks):
+                    for num, t_data in enumerate(tracks):
+
+                        track, frame_id = t_data
 
                         # Create dict with results
                         entry = set([])
@@ -189,13 +193,13 @@ class BeeClassification(object):
 
                                 # Save the corresponding image on disc
                                 if get_config("SAVE_DETECTION_IMAGES") and lbl in get_config("SAVE_DETECTION_TYPES"):
-                                    img = images[num]
-                                    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-                                    cv2.imwrite(get_config("SAVE_DETECTION_PATH") + "/%s/%i-%s.jpeg" % (lbl, _process_cnt, \
-                                            datetime.now().strftime("%Y%m%d-%H%M%S")), img)
+
+                                    img = images_orig[num]
+                                    cv2.imwrite(get_config("SAVE_DETECTION_PATH") + "/%s/%i-%s-%i.jpeg" % (lbl, _process_cnt, \
+                                            datetime.now().strftime("%Y%m%d-%H%M%S"), frame_id), img)
 
                         # Push results back
-                        q_out.put((tracks[num], entry, images[num]))
+                        q_out.put((tracks[num][0], entry, images[num]))
 
                 _end_t = time.time() - _start_t
                 logger.debug("Process time: %0.3fms - Queued: %i, processed %i" % (_end_t * 1000.0, q_in.qsize(), len(images)))
