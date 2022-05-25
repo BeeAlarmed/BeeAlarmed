@@ -2,6 +2,8 @@
 
 A camera based bee-hive monitoring that identifies and tracks bees. It also identifies bee characteristics with a neural network, such as pollen packages, wasps, varroa mite infestations or bees trying to cool the hive. Therefore, it utilizes tensorflow, opencv, filterpy and others.
 
+<a href="https://www.youtube.com/watch?v=sRm5TmTcnpg&t=0s">Here is an example video! (YouTube.com)</a>
+
 This is the result of a private project to develop a camera based bee monitoring system. It was initially made to run on the JetsonNano, but it is not limited to it.
 
 ## What it can
