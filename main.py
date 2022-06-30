@@ -3,6 +3,7 @@ from ImageProvider import ImageProvider
 from ImageConsumer import ImageConsumer
 from ImageExtractor import ImageExtractor
 from LoRaWANThread import LoRaWANThread
+from Visual import Visual
 from Utils import get_args, get_config
 import logging
 import time
@@ -12,7 +13,7 @@ import sys
 if get_config("NN_ENABLE"):
     from BeeClassification import BeeClassification
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - \t%(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(process)d %(asctime)s - %(name)s - %(levelname)s - \t%(message)s')
 logger = logging.getLogger(__name__)
 
 def main():
@@ -44,7 +45,9 @@ def main():
         lorawan = LoRaWANThread()
     imgExtractor = ImageExtractor()
     imgConsumer = ImageConsumer()
+    visualiser = Visual()
     imgConsumer.setImageQueue(imgProvider.getQueue())
+    imgConsumer.setVisualQueue(visualiser.getInQueue())
     if get_config("NN_ENABLE"):
         imgExtractor.setResultQueue(imgClassifier.getQueue())
         imgConsumer.setClassifierResultQueue(imgClassifier.getResultQueue())
@@ -55,6 +58,7 @@ def main():
         # Start the processes
         imgConsumer.start()
         imgExtractor.start()
+        visualiser.start()
         if lorawan is not None:
             lorawan.start()
 
@@ -72,6 +76,7 @@ def main():
             lorawan.stop()
         imgProvider.stop()
         imgExtractor.stop()
+        visualiser.stop()
         imgConsumer.stop()
         if imgClassifier:
             imgClassifier.stop()

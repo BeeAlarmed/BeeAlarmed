@@ -10,6 +10,7 @@
 import cv2
 import time
 import logging
+import queue
 from Statistics import getStatistics
 from threading import Thread
 from ImageProvider import ImageProvider
@@ -36,6 +37,7 @@ class ImageConsumer(Thread):
         self._extractQueue = Queue()
         self._classifierResultQueue = None
         self._imageQueue = None
+        self._visualQueue = None
         Thread.__init__(self)
 
     def getPositionQueue(self):
@@ -49,6 +51,12 @@ class ImageConsumer(Thread):
         @param queue    The queue object to read new frames from
         """
         self._imageQueue = queue
+    
+    def setVisualQueue(self, queue):
+        """! Set the queue object where the image consumer can find new frames
+        @param queue    The queue object to read new frames from
+        """
+        self._visualQueue = queue
 
     def setClassifierResultQueue(self, queue):
         """! Set the queue obejct where the 'ImageConsumer' can read classification results
@@ -79,13 +87,9 @@ class ImageConsumer(Thread):
             # When the neural network is enabled, then read results from the classifcation queue
             # and forward them the the corresponding track and statistics
             if get_config("NN_ENABLE"):
-                if _process_cnt % 100 == 0:
-                    logger.debug("Process time(q): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                 # Populate classification results
                 while not self._classifierResultQueue.empty():
-                    if _process_cnt % 100 == 0:
-                        logger.debug("Process time(nn): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                     # Transfer results to the track
                     trackId, result, image = self._classifierResultQueue.get()
@@ -108,69 +112,45 @@ class ImageConsumer(Thread):
                     img_1080, img_540, img_180 = fs
                 elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
                     img_540, img_180 = fs
-
-                if _process_cnt % 100 == 0:
-                    logger.debug("Process time(detec): %0.3fms" % ((time.time() - _start_t) * 1000.0))
-
-                # Detect bees on smallest frame
-                detected_bees, detected_bee_groups = detect_bees(img_180, 3)
-
+                
                 if _process_cnt % 100 == 0:
                     logger.debug("Process time(track): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
-                # # Update tracker with detected bees
+                # Detect bees on smallest frame
+                detected_bees, detected_bee_groups = detect_bees(img_180, 3)
+                
+                # Update tracker with detected bees
                 if get_config("ENABLE_TRACKING"):
                     tracker.update(detected_bees, detected_bee_groups)
 
                 # Extract detected bee images from the video, to use it our neural network
                 # Scale is 2 because detection was made on img_540 but cutting is on img_1080
-                if get_config("ENABLE_IMAGE_EXTRACTION"):
+                if False and get_config("ENABLE_IMAGE_EXTRACTION"):
                     data = tracker.getLastBeePositions(get_config("EXTRACT_FAME_STEP"))
-                    if len(data) and type(self._extractQueue) != type(None):
+                    if len(data) and type(e_q) != type(None):
                         if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_150x300":
-                            self._extractQueue.put((data, img_1080, 2, _process_cnt))
+                            e_q.put((data, img_1080, 2, _process_cnt))
                         elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
-                            self._extractQueue.put((data, img_540, 1, _process_cnt))
+                            e_q.put((data, img_540, 1, _process_cnt))
                         else:
                             raise("Unknown setting for EXT_RES_75x150, expected EXT_RES_150x300 or EXT_RES_75x150")
 
                 if _process_cnt % 100 == 0:
-                    logger.debug("Process time(print): %0.3fms" % ((time.time() - _start_t) * 1000.0))
+                    logger.debug("Process time(previsual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
-                # Draw preview if wanted
-                if not get_args().noPreview:
-
-                    draw_on = img_540.copy()
-                    if get_config("DRAW_DETECTED_ELLIPSES"):
-                        for item in detected_bees:
-                            cv2.ellipse(draw_on, item, (0, 0, 255), 2)
-                    if get_config("DRAW_DETECTED_GROUPS"):
-                        for item in detected_bee_groups:
-                            cv2.ellipse(draw_on, item, (255, 0, 0), 2)
-
-                    if get_config("DRAW_TRACKING_RESULTS"):
-                        tracker.drawTracks(draw_on)
-
-                    skipKey = 1 if get_config("FRAME_AUTO_PROCESS") else 0
-
-                    cv2.imshow("frame", draw_on)
-                    if cv2.waitKey(skipKey) & 0xFF == ord('q'):
-                        break
-
-                    # Save as Video
-                    if get_config("SAVE_AS_VIDEO"):
-                        if type(writer) == type(None):
-                            h, w, c = draw_on.shape
-
-                            #TODO: Set real Framerate from video input or from video stream
-                            writer = cv2.VideoWriter(get_config("SAVE_AS_VIDEO_PATH"), \
-                                    cv2.VideoWriter_fourcc(*'MJPG'), 18, (w, h))
-                        writer.write(draw_on)
+                try:
+                    data = (img_540, img_1080, detected_bees, detected_bee_groups, tracker) 
+                    self._visualQueue.put(data, block=False)
+                except queue.Full:
+                    print("frame skip !!")
+                
+                if _process_cnt % 100 == 0:
+                    logger.debug("Process time(visual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                 # Print log entry about process time each 100 frames
                 _process_time += time.time() - _start_t
                 if _process_cnt % 100 == 0:
-                    logger.debug("Process time: %0.3fms" % (_process_time * 10.0))
+                    logger.debug("Process time all: %0.3fms" % (_process_time * 10.0))
                     _process_time = 0
 
 
