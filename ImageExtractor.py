@@ -13,6 +13,7 @@ import time
 import logging
 import cv2
 import signal
+import queue
 import multiprocessing
 import datetime
 from os.path import join, exists
@@ -127,11 +128,16 @@ class ImageExtractor(object):
 
                             # Forward the image to the classification process (if its running)
                             if get_config("NN_ENABLE"):
-                                if out_q.full():
-                                    logger.debug("Classifier Queue full")
-                                    # Remove oldest entry to add a new one
-                                    out_q.get()
-                                out_q.put((trackId, img, frame_id))
+                                #if out_q.() > 20:
+                                #    logger.debug("Classifier Queue full: %i elements" % (out_q.qsize(),))
+                                #    # Remove oldest entry to add a new one
+                                #    out_q.get()
+                                #else:
+                                try:
+                                    out_q.put((trackId, img, frame_id), block=False)
+                                except queue.Full:
+                                    pass
+                                    
 
                             # Save the image in case its requested
                             if get_config("SAVE_EXTRACTED_IMAGES"):

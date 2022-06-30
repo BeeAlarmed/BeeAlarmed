@@ -139,7 +139,7 @@ class ImageConsumer(Thread):
                     logger.debug("Process time(previsual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                 try:
-                    data = (img_540, img_1080, detected_bees, detected_bee_groups, tracker) 
+                    data = (img_540, detected_bees, detected_bee_groups, tracker) 
                     self._visualQueue.put(data, block=False)
                 except queue.Full:
                     print("frame skip !!")
