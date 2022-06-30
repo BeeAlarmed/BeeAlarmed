@@ -125,13 +125,13 @@ class ImageConsumer(Thread):
 
                 # Extract detected bee images from the video, to use it our neural network
                 # Scale is 2 because detection was made on img_540 but cutting is on img_1080
-                if False and get_config("ENABLE_IMAGE_EXTRACTION"):
+                if get_config("ENABLE_IMAGE_EXTRACTION"):
                     data = tracker.getLastBeePositions(get_config("EXTRACT_FAME_STEP"))
-                    if len(data) and type(e_q) != type(None):
+                    if len(data) and type(self._extractQueue) != type(None):
                         if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_150x300":
-                            e_q.put((data, img_1080, 2, _process_cnt))
+                            self._extractQueue.put((data, img_1080, 2, _process_cnt))
                         elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
-                            e_q.put((data, img_540, 1, _process_cnt))
+                            self._extractQueue.put((data, img_540, 1, _process_cnt))
                         else:
                             raise("Unknown setting for EXT_RES_75x150, expected EXT_RES_150x300 or EXT_RES_75x150")
 
