@@ -76,13 +76,14 @@ def main():
             lorawan.stop()
         imgProvider.stop()
         imgExtractor.stop()
-        visualiser.stop()
         imgConsumer.stop()
+        visualiser.stop()
         if imgClassifier:
             imgClassifier.stop()
             imgClassifier.join()
         imgExtractor.join()
         imgProvider.join()
+        visualiser.join()
 
 if __name__ == '__main__':
     main()

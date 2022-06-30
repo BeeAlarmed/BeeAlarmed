@@ -8,7 +8,7 @@
 FRAME_AUTO_PROCESS:                      True
 
 # Limit FPS to the given number:
-LIMIT_FPS_TO:                            20
+LIMIT_FPS_TO:                           30
 
 # Length of buffered images for video file inputs
 FRAME_SET_BUFFER_LENGTH_VIDEO:           20
@@ -134,13 +134,13 @@ EXTRACT_MIN_SHARPNESS:       120
 
 # Save the extracted image to evaluate the extraction process or to generate image to
 # train the neural network?
-SAVE_EXTRACTED_IMAGES:       True
+SAVE_EXTRACTED_IMAGES:       False
 
 # The folder to store the extracted images to
 SAVE_EXTRACTED_IMAGES_PATH:  "ext4"
 
 # Save images that passed the classification with positiv results?
-SAVE_DETECTION_IMAGES:       True
+SAVE_DETECTION_IMAGES:       False
 SAVE_DETECTION_PATH:         "Detections"
 
 # Defines which images shall be saved
@@ -149,7 +149,7 @@ SAVE_DETECTION_TYPES:        ["varroa", "pollen"]
 
   # Resolution for image extraction (see: SAVE_EXTRACTED_IMAGES) 
 # Can be either EXT_RES_75x150 or EXT_RES_150x300
-NN_EXTRACT_RESOLUTION:       "EXT_RES_150x300"
+NN_EXTRACT_RESOLUTION:       "EXT_RES_75x150"
 
 # Resolution of the images passed to the classification network
 # Can be either EXT_RES_75x150 or EXT_RES_150x300

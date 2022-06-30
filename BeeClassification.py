@@ -13,6 +13,7 @@ from os.path import isfile, join, exists
 from datetime import datetime
 import cv2
 import time
+import queue
 import multiprocessing
 import logging
 
@@ -46,8 +47,8 @@ class BeeClassification(object):
         self._process = multiprocessing.Process(target=self._neuralN, args=(self._q_in, self._q_out, self._ready, self._stopped))
         self._process.start()
         while self._ready.value == 0:
-            time.sleep(1)
-            logger.debug("Waiting for neural network, this may take up to two minutes")
+            time.sleep(5)
+            logger.info("Waiting for neural network, this may take up to two minutes")
         logger.debug("Classification terminated")
 
     def getQueue(self):
@@ -160,17 +161,22 @@ class BeeClassification(object):
 
                 # Load the images from the in-queue and prepare them for the use in the network
                 failed = False
-                while not q_in.empty() and len(images) < 20 and stopped.value == 0:
-                    item = q_in.get()
-                    t, img, frame_id = item
+                while len(images) < 20 and stopped.value == 0:
+                    try:
+                        item = q_in.get(block=False)
+                    except queue.Empty:
+                        item = None
+                        break
 
-                    # Change color from BGR to RGB
-                    images_orig.append(img)
-                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                    if img.shape != (img_height, img_width, 3):
-                        img = tf.image.resize(img, [img_height, img_width])
-                    images.append(img)
-                    tracks.append((t, frame_id))
+                    if not item is None:
+                        t, img, frame_id = item
+                        # Change color from BGR to RGB
+                        images_orig.append(img)
+                        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                        if img.shape != (img_height, img_width, 3):
+                            img = tf.image.resize(img, [img_height, img_width])
+                        images.append(img)
+                        tracks.append((t, frame_id))
 
                 # Quit process if requested
                 if stopped.value != 0:
@@ -205,5 +211,5 @@ class BeeClassification(object):
                 logger.debug("Process time: %0.3fms - Queued: %i, processed %i" % (_end_t * 1000.0, q_in.qsize(), len(images)))
                 _process_time += _end_t
             else:
-                time.sleep(0.01)
+                time.sleep(0.1)
         logger.info("Classifcation stopped")

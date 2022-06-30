@@ -43,7 +43,7 @@ class Visual(object):
 
     def getInQueue(self):
         """! Sets the input queue to receive the current image and the tracking results
-             (img_540, img_1080, detected_bees, detected_bee_groups, tracker)
+             (img_540, detected_bees, detected_bee_groups, tracker)
         """
         return self._inQueue 
 
@@ -91,7 +91,7 @@ class Visual(object):
                 _process_cnt += 1
 
                 # Read one entry from the process queue
-                img_540, img_1080, detected_bees, detected_bee_groups, tracker = in_q.get()
+                img_540, detected_bees, detected_bee_groups, tracker = in_q.get()
 
                 # Draw preview if wanted
                 if not get_args().noPreview:
