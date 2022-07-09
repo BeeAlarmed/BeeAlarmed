@@ -115,7 +115,15 @@ class ImageProvider(object):
         # Open video stream
         if video_source == None:
             logger.info("Starting from video file input: %s" % (video_file,))
-            _videoStream = cv2.VideoCapture(video_file)
+            # use HW acceleration for video file
+            if get_config("USE_GSTREAM"):
+                _videoStream = cv2.VideoCapture('filesrc location={}\
+                                        ! queue ! h264parse ! omxh264dec ! nvvidconv \
+                                        ! video/x-raw,format=BGRx,width=960,height=544 ! queue ! videoconvert ! queue \
+                                        ! video/x-raw, format=BGR ! appsink'.format(video_file),
+                                        cv2.CAP_GSTREAMER)
+            else:
+                _videoStream = cv2.VideoCapture(video_file)
         else:
             logger.info("Starting from camera input")
             _videoStream = cv2.VideoCapture(video_source)
