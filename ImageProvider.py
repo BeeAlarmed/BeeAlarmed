@@ -188,6 +188,7 @@ class ImageProvider(object):
                         _process_time = 0
                 else:
                     logger.error("No frame received!")
+                    logger.error("> Try disabling USE_GSTREAM in the config.yaml!")
                     stopped.value = 1
 
         # End of process reached

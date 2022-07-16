@@ -12,17 +12,8 @@
 
 import argparse
 import tensorflow as tf
-import tensorflow_datasets as tfds
 import BeeModel
 
-print("=" * 30)
-try:
-    from BeeDataset.bee_dataset import BeeDataset
-
-    print("Using local Bee-Dataset")
-except:
-    print("Using Bee-Dataset from TFDS installation")
-print("=" * 30)
 
 # Allow growth
 # pylint: disable=no-member
@@ -30,9 +21,12 @@ print("=" * 30)
 # config.gpu_options.allow_growth = True
 # session = tf.compat.v1.InteractiveSession(config=config)
 
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", action="store_true",
                     help="Use --gpu=True to train network with GPU and nothing to train on CPU.")
+parser.add_argument("--local-ds", action="store_true",
+                    help="Use --local-ds=True to use local BeeDataset files. Default is to use the dataset uploaded to tensorflow-datasets.")
 args = parser.parse_args()
 
 # Jetson Nano GPU
@@ -44,8 +38,17 @@ if args.gpu:
 
 MODEL_SAVE_PATH = "SavedModel"
 
+
 # Load via TFDS
-train, val = tfds.load('bee_dataset/bee_dataset_150',
+if args.local_ds:
+    from BeeDataset.bee_dataset import BeeDataset
+    train, val = tfds.load('bee_dataset/bee_dataset_150',
+                       batch_size=11,  # 100, #changed batch to load to Jetson Nano to avoid process kill
+                       as_supervised=True,
+                       split=["train[0%:50%]", "train[50%:100%]"])
+else:
+    import tensorflow_datasets as tfds
+    train, val = tfds.load('bee_dataset/bee_dataset_150',
                        batch_size=11,  # 100, #changed batch to load to Jetson Nano to avoid process kill
                        as_supervised=True,
                        split=["train[0%:50%]", "train[50%:100%]"])
