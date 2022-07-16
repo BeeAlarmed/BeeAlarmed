@@ -101,6 +101,7 @@ class BeeClassification(object):
         # Enable growth of GPU usage
         config = tf.compat.v1.ConfigProto()
         config.gpu_options.allow_growth = True
+        config.gpu_options.per_process_gpu_memory_fraction = 0.75  # added to limit GPU memory usage
         session = tf.compat.v1.InteractiveSession(config=config)
 
         # Load the model

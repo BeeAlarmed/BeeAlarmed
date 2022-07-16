@@ -1,4 +1,15 @@
 ##
+## GPU and GSTREAM using Jetson Nano
+#
+
+# Use Jetosn Nano GPU
+USE_GPU:                                True
+
+#Use Gstream (NVDEC)
+USE_GSTREAM:                             True
+
+
+##
 ## Image processing
 ##
 
