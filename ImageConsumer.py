@@ -92,7 +92,7 @@ class ImageConsumer(Thread):
                 while not self._classifierResultQueue.empty():
 
                     # Transfer results to the track
-                    trackId, result, image = self._classifierResultQueue.get()
+                    trackId, result = self._classifierResultQueue.get()
                     track = tracker.getTrackById(trackId)
                     if type(track) != type(None):
                         track.imageClassificationComplete(result)
@@ -135,14 +135,14 @@ class ImageConsumer(Thread):
                         else:
                             raise("Unknown setting for EXT_RES_75x150, expected EXT_RES_150x300 or EXT_RES_75x150")
 
-                if _process_cnt % 100 == 0:
-                    logger.debug("Process time(previsual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
-
-                try:
-                    data = (img_540, detected_bees, detected_bee_groups, tracker) 
-                    self._visualQueue.put(data, block=False)
-                except queue.Full:
-                    print("frame skip !!")
+                # Draw the results if enabled
+                if get_config("VISUALIZATION_ENABLED"):
+                    if _process_cnt % get_config("VISUALIZATION_FRAME_SKIP") == 0:
+                        try:
+                            data = (img_540, detected_bees, detected_bee_groups, tracker) 
+                            self._visualQueue.put(data, block=False)
+                        except queue.Full:
+                            print("frame skip !!")
                 
                 if _process_cnt % 100 == 0:
                     logger.debug("Process time(visual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
@@ -150,7 +150,8 @@ class ImageConsumer(Thread):
                 # Print log entry about process time each 100 frames
                 _process_time += time.time() - _start_t
                 if _process_cnt % 100 == 0:
-                    logger.debug("Process time all: %0.3fms" % (_process_time * 10.0))
+                    fps = (100/ (_process_time))
+                    logger.debug("Process time all: %0.3fms -> FPS: %0.2f" % (_process_time * 10.0, fps))
                     _process_time = 0
 
 

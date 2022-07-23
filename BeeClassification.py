@@ -107,10 +107,12 @@ class BeeClassification(object):
         # Load the model
         try:
             _model = tf.keras.models.load_model(get_config("NN_MODEL_FOLDER"))
+            _model.trainable = False
         except Exception as e:
             ready.value = True
             logger.error("Failed to load Model: %s" % (e,))
             return
+
 
         # Detect desired image size for classification
         img_height = 300
@@ -134,7 +136,7 @@ class BeeClassification(object):
                 imgs.append(img)
 
             # Perform prediction
-            _model.predict_step(tf.convert_to_tensor(imgs))
+            _model.predict_on_batch(tf.convert_to_tensor(imgs))
 
         # Mark process as ready
         ready.value = True
@@ -162,7 +164,7 @@ class BeeClassification(object):
 
                 # Load the images from the in-queue and prepare them for the use in the network
                 failed = False
-                while len(images) < 20 and stopped.value == 0:
+                while len(images) < 5 and stopped.value == 0:
                     try:
                         item = q_in.get(block=False)
                     except queue.Empty:
@@ -206,11 +208,11 @@ class BeeClassification(object):
                                             datetime.now().strftime("%Y%m%d-%H%M%S"), frame_id), img)
 
                         # Push results back
-                        q_out.put((tracks[num][0], entry, images[num]))
+                        q_out.put((tracks[num][0], entry))
 
                 _end_t = time.time() - _start_t
                 logger.debug("Process time: %0.3fms - Queued: %i, processed %i" % (_end_t * 1000.0, q_in.qsize(), len(images)))
                 _process_time += _end_t
             else:
-                time.sleep(0.1)
+                time.sleep(0.5)
         logger.info("Classifcation stopped")

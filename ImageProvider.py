@@ -119,8 +119,8 @@ class ImageProvider(object):
             if get_config("USE_GSTREAM"):
                 _videoStream = cv2.VideoCapture('filesrc location={}\
                                         ! queue ! h264parse ! omxh264dec ! nvvidconv \
-                                        ! video/x-raw,format=BGRx,width=960,height=544 ! queue ! videoconvert ! queue \
-                                        ! video/x-raw, format=BGR ! appsink'.format(video_file),
+                                        ! video/x-raw,format=BGRx,width=960,height=540 ! queue ! videoconvert ! queue \
+                                        ! video/x-raw,format=BGR ! appsink'.format(video_file),
                                         cv2.CAP_GSTREAMER)
             else:
                 _videoStream = cv2.VideoCapture(video_file)

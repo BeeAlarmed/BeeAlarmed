@@ -1,10 +1,20 @@
 ##
 ## GPU and GSTREAM using Jetson Nano
-#
+##
 
 # Use Gstream (NVDEC)
-USE_GSTREAM:                             False
+USE_GSTREAM:                            True
 
+##
+## Visualization
+##
+
+# Enabled result visulatization, this will 
+# slow down the processing. Needs to be 
+# enabled to use 'SAVE_AS_VIDEO'
+VISUALIZATION_ENABLED:                  True
+
+VISUALIZATION_FRAME_SKIP:               3
 
 ##
 ## Image processing
@@ -16,10 +26,10 @@ USE_GSTREAM:                             False
 FRAME_AUTO_PROCESS:                      True
 
 # Limit FPS to the given number:
-LIMIT_FPS_TO:                           30
+LIMIT_FPS_TO:                            30
 
 # Length of buffered images for video file inputs
-FRAME_SET_BUFFER_LENGTH_VIDEO:           20
+FRAME_SET_BUFFER_LENGTH_VIDEO:           5
 
 # Length of buffered images for camera inputs
 FRAME_SET_BUFFER_LENGTH_CAMERA:          3
