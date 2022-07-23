@@ -16,6 +16,8 @@ VISUALIZATION_ENABLED:                  True
 
 VISUALIZATION_FRAME_SKIP:               3
 
+SHOW_VISUALIZATION_DETAILS:             True
+
 ##
 ## Image processing
 ##

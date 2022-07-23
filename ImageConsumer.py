@@ -67,8 +67,10 @@ class ImageConsumer(Thread):
     def run(self: Thread) -> None:
         """! The main thread that runs the 'ImageConsumer'
         """
-        _process_time = 0
+        _process_time = time.time()
         _process_cnt = 0
+        _lastProcessFPS = 0
+        _start_t = time.time()
         writer = None
 
         # Create a Bee Tracker
@@ -82,6 +84,7 @@ class ImageConsumer(Thread):
 
         while not self.stopped:
 
+            _end_t = time.time() - _start_t
             _start_t = time.time()
 
             # When the neural network is enabled, then read results from the classifcation queue
@@ -101,7 +104,6 @@ class ImageConsumer(Thread):
 
             # Process every incoming image
             if not self._imageQueue.empty():
-                _process_cnt += 1
 
                 if _process_cnt % 100 == 0:
                     logger.debug("Process time(get): %0.3fms" % ((time.time() - _start_t) * 1000.0))
@@ -139,7 +141,7 @@ class ImageConsumer(Thread):
                 if get_config("VISUALIZATION_ENABLED"):
                     if _process_cnt % get_config("VISUALIZATION_FRAME_SKIP") == 0:
                         try:
-                            data = (img_540, detected_bees, detected_bee_groups, tracker) 
+                            data = (img_540, detected_bees, detected_bee_groups, tracker, _lastProcessFPS) 
                             self._visualQueue.put(data, block=False)
                         except queue.Full:
                             print("frame skip !!")
@@ -148,15 +150,12 @@ class ImageConsumer(Thread):
                     logger.debug("Process time(visual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                 # Print log entry about process time each 100 frames
-                _process_time += time.time() - _start_t
-                if _process_cnt % 100 == 0:
-                    fps = (100/ (_process_time))
-                    logger.debug("Process time all: %0.3fms -> FPS: %0.2f" % (_process_time * 10.0, fps))
-                    _process_time = 0
-
+                if _process_cnt % 50 == 0:
+                    _pt = time.time() - _process_time
+                    _lastProcessFPS = 50 / _pt
+                    _process_time = time.time()
 
                 # Limit FPS by delaying manually
-                _end_t = time.time() - _start_t
                 limit_time = 1 / get_config("LIMIT_FPS_TO")
                 if _end_t < limit_time:
                     time.sleep(limit_time - _end_t)
@@ -164,6 +163,8 @@ class ImageConsumer(Thread):
                 # Update statistics
                 _dh = getStatistics()
                 _dh.frameProcessed()
+
+                _process_cnt += 1
 
             else:
                 time.sleep(0.1)
