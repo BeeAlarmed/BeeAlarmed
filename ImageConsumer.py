@@ -84,8 +84,7 @@ class ImageConsumer(Thread):
 
         while not self.stopped:
 
-            _end_t = time.time() - _start_t
-            _start_t = time.time()
+            _process_cnt += 1
 
             # When the neural network is enabled, then read results from the classifcation queue
             # and forward them the the corresponding track and statistics
@@ -150,24 +149,24 @@ class ImageConsumer(Thread):
                     logger.debug("Process time(visual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                 # Print log entry about process time each 100 frames
-                if _process_cnt % 50 == 0:
+                if _process_cnt % 100 == 0:
                     _pt = time.time() - _process_time
-                    _lastProcessFPS = 50 / _pt
+                    _lastProcessFPS = 100 / _pt
                     _process_time = time.time()
-
-                # Limit FPS by delaying manually
-                limit_time = 1 / get_config("LIMIT_FPS_TO")
-                if _end_t < limit_time:
-                    time.sleep(limit_time - _end_t)
 
                 # Update statistics
                 _dh = getStatistics()
                 _dh.frameProcessed()
 
-                _process_cnt += 1
-
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
+
+            # Limit FPS by delaying manually
+            _end_t = time.time() - _start_t
+            limit_time = 1 / get_config("LIMIT_FPS_TO")
+            if _end_t < limit_time:
+                time.sleep(limit_time - _end_t)
+            _start_t = time.time()
 
         self._done = True
         logger.info("Image Consumer stopped")
