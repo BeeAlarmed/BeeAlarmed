@@ -64,6 +64,7 @@ def main():
 
         # Quit program if end of video-file is reached or
         # the camera got disconnected
+        #imgConsumer.join()
         while True:
             time.sleep(0.01)
             if imgConsumer.isDone() or imgProvider.isDone():
@@ -76,8 +77,8 @@ def main():
             lorawan.stop()
         imgProvider.stop()
         imgExtractor.stop()
-        imgConsumer.stop()
         visualiser.stop()
+        imgConsumer.stop()
         if imgClassifier:
             imgClassifier.stop()
             imgClassifier.join()
