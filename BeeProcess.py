@@ -1,0 +1,85 @@
+"""! @brief This file contains the 'BeeProcess' """
+##
+# @file BeeProcess.py
+#
+# @brief Process class which all processes inherit from
+
+# @section authors Author(s)
+# - Created by Fabian Hickert on december 2022
+#
+import time
+import logging
+import multiprocessing
+logger = logging.getLogger(__name__)
+
+class BeeProcess(object):
+    def __init__(self):
+        """! Initializes the defaults
+        """
+        self._stopped = multiprocessing.Value('i', 0)
+        self._done = multiprocessing.Value('i', 0)
+        self._process = None
+        self._queues = {}
+        self._parentclass = self.__class__
+
+    def set_queue(self, name, queue):
+        self._queues[name] = queue
+
+    def isDone(self):
+        return self._done.value
+
+    def stop(self):
+        """! Forces the process to stop
+        """
+
+        # Wait for process to stop
+
+        self._stopped.value = 1
+        for i in range(100):
+            if self._done.value == 1:
+                break
+            time.sleep(0.01)
+        if self._done.value == 0:
+            logger.warn("Terminating process after waiting 1s for gracefull shutdown!")
+            self._process.terminate()
+
+        for qn,q in self._queues.items():
+            if q is not None:
+                try:
+                    while not q.empty():
+                        q.get()
+                except:
+                    pass
+
+    def join(self):
+        self._process.join()
+
+    @staticmethod
+    def run(*args):
+        print("run")
+        time.sleep(1)
+
+    @staticmethod
+    def _run(args):
+        parent = args["parent"]
+        stopped = args["stopped"]
+        done = args["done"]
+        try:
+            parent.run(**args)
+        except KeyboardInterrupt as ki:
+            logger.debug(">> Received KeyboardInterrupt")
+
+        done.value = 1
+            
+    def start(self):
+        """! Starts the image extraction process
+        """
+        # Start the process
+        args = self._queues.copy()
+        args["parent"] = self._parentclass
+        args["stopped"] = self._stopped
+        args["done"] = self._done
+
+        self._process = multiprocessing.Process(target=self._run, \
+                args=[args])
+        self._process.start()
