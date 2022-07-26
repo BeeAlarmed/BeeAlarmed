@@ -57,7 +57,8 @@ class BeeProcess(object):
                     pass
 
     def join(self):
-        self._process.join()
+        if self._stopped.value == 0 and self._done.value == 0 and self._started:
+            self._process.join()
 
     @staticmethod
     def run(*args):
@@ -77,6 +78,7 @@ class BeeProcess(object):
         except KeyboardInterrupt as ki:
             logger.debug(">> Received KeyboardInterrupt")
 
+        stopped.value = 1
         done.value = 1
             
     def start(self):
