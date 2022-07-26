@@ -10,7 +10,6 @@
 import time
 import logging
 import cv2
-import signal
 import multiprocessing
 import datetime
 import queue
@@ -43,9 +42,6 @@ class Visual(BeeProcess):
     def run(in_q, parent, stopped, done):
         """! Static method, starts the process of the image extractor
         """
-
-        # Ignore interrupt signals
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         _process_time = 0
         _process_time_n100 = 0

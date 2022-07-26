@@ -12,7 +12,6 @@ from Utils import cutEllipseFromImage, get_config
 import time
 import logging
 import cv2
-import signal
 import queue
 import multiprocessing
 import datetime

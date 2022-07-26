@@ -75,10 +75,6 @@ class BeeClassification(BeeProcess):
         from tensorflow.keras import layers
         from tensorflow.keras.models import Sequential
         from tensorflow.keras import layers
-        import signal
-
-        # Ignore interrupts
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         _process_time = 0
         _process_cnt = 0

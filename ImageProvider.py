@@ -16,7 +16,6 @@ import cv2
 import time
 import logging
 import multiprocessing
-import signal
 from BeeProcess import BeeProcess
 
 logger = logging.getLogger(__name__)
@@ -84,9 +83,6 @@ class ImageProvider(BeeProcess):
 
     @staticmethod
     def run(q_out, config, video_source, video_file, parent, stopped, done):
-
-        # Ignore interrupts
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         # Open video stream
         if video_source == None:

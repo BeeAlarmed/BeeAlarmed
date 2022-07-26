@@ -8,6 +8,7 @@
 # - Created by Fabian Hickert on december 2022
 #
 import time
+import signal
 import logging
 import multiprocessing
 logger = logging.getLogger(__name__)
@@ -65,6 +66,9 @@ class BeeProcess(object):
 
     @staticmethod
     def _run(args):
+
+        signal.signal(signal.SIGINT, signal.SIG_IGN)
+
         parent = args["parent"]
         stopped = args["stopped"]
         done = args["done"]
