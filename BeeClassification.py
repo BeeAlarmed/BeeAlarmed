@@ -16,10 +16,11 @@ import time
 import queue
 import multiprocessing
 import logging
+from BeeProcess import BeeProcess
 
 logger = logging.getLogger(__name__)
 
-class BeeClassification(object):
+class BeeClassification(BeeProcess):
     """! The 'BeeClassification' class provides access to the neural network
           which runs in a seperate process. It provides two queue-objects,
           one to queue to incoming images that have to be processed by the
@@ -30,22 +31,22 @@ class BeeClassification(object):
 
         """! Initializes the neural network and the queues
         """
-        # used to stop the process
-        self._stopped = multiprocessing.Value('i', 0)
+        super().__init__()
 
         # reports when the porcess with the neural network is ready
         self._ready = multiprocessing.Value('i', 0)
-        self._done = False
+        self.set_process_param("ready", self._ready)
 
         # The queue for the incoming images
         self._q_in = multiprocessing.Queue(maxsize=20)
+        self.set_process_param("q_in", self._q_in)
 
         ## The queue where the results are reported
         self._q_out = multiprocessing.Queue()
+        self.set_process_param("q_out", self._q_out)
 
         # Start the process and wait for it to run
-        self._process = multiprocessing.Process(target=self._neuralN, args=(self._q_in, self._q_out, self._ready, self._stopped))
-        self._process.start()
+        self.start()
         while self._ready.value == 0:
             time.sleep(5)
             logger.info("Waiting for neural network, this may take up to two minutes")
@@ -63,24 +64,8 @@ class BeeClassification(object):
         """
         return self._q_out
 
-    def stop(self) -> None:
-        """! Tell the classification process and thus the neural network to stop.
-             The process will quit and you need to call join afterwards.
-        """
-        self._stopped.value = True
-        while not self._q_in.empty():
-            self._q_in.get()
-        while not self._q_out.empty():
-            self._q_out.get()
-
-    def join(self):
-        """! Terminate the process and joins it. Should be called after 'stop'.
-        """
-        self._process.terminate()
-        self._process.join()
-
     @staticmethod
-    def _neuralN(q_in, q_out, ready, stopped):
+    def run(q_in, q_out, ready, parent, stopped, done):
         """! Static method, starts a new process that runs the neural network
         """
 

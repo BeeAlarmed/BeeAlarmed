@@ -17,10 +17,11 @@ import time
 import logging
 import multiprocessing
 import signal
+from BeeProcess import BeeProcess
 
 logger = logging.getLogger(__name__)
 
-class ImageProvider(object):
+class ImageProvider(BeeProcess):
 
     """! The 'ImageProvider' class provides access to the camera or video
           input using a queue. It runs in a dedicated process and feeds
@@ -30,12 +31,10 @@ class ImageProvider(object):
     def __init__(self, video_source=None, video_file=None):
         """! Initializes the image provider process and queue
         """
+        super().__init__()
+
         self.frame_config = None
         self._videoStream = None
-        self._stopped = multiprocessing.Value('i', 0)
-        self._started = multiprocessing.Value('i', 0)
-        self._process = None
-
 
         # Validate the frame_config
         max_w = max_h = 0
@@ -71,9 +70,11 @@ class ImageProvider(object):
         else:
             self._queue = multiprocessing.Queue(maxsize=get_config("FRAME_SET_BUFFER_LENGTH_CAMERA"))
 
-        self._process = multiprocessing.Process(target=self._imgProcess,
-                args=(self._queue, frame_config, video_source, video_file, self._stopped, self._started))
-        self._process.start()
+        self.set_process_param("video_file", video_file)
+        self.set_process_param("video_source", video_source)
+        self.set_process_param("config", self.frame_config)
+        self.set_process_param("q_out", self._queue)
+        self.start()
 
     def getQueue(self):
         """! Returns the queue-object where the extracted frames will be put.
@@ -81,33 +82,8 @@ class ImageProvider(object):
         """
         return self._queue
 
-    def isStarted(self):
-        """! Returns whether the image processing started or not
-        @return Returns True if the process was started
-        """
-        return self._started.value
-
-    def isDone(self):
-        """! Returns whether the image processing still running or ended
-        @return Returns True if the process has stopped
-        """
-        return self._stopped.value
-
-    def stop(self) -> None:
-        """! Stops the image provides process
-        """
-        self._stopped.value = 1
-        while not self._queue.empty():
-            self._queue.get()
-
-    def join(self):
-        """! Terminates the process and joins it. Should be called after 'stop'.
-        """
-        self._process.terminate()
-        self._process.join()
-
     @staticmethod
-    def _imgProcess(q_out, config, video_source, video_file, stopped, started):
+    def run(q_out, config, video_source, video_file, parent, stopped, done):
 
         # Ignore interrupts
         signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -154,9 +130,6 @@ class ImageProvider(object):
                 # There is still space in the queue, get a frame and process it
                 _start_t = time.time()
                 (_ret, _frame) = _videoStream.read()
-
-                if started.value == 0:
-                    started.value = 1
 
                 if _ret:
 

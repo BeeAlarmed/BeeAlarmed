@@ -18,10 +18,11 @@ import multiprocessing
 import datetime
 from os.path import join, exists
 from os import makedirs
+from BeeProcess import BeeProcess
 
 logger = logging.getLogger(__name__)
 
-class ImageExtractor(object):
+class ImageExtractor(BeeProcess):
     """! The 'ImageExtractor' class provides a process that extracts
           bee-images from a givem video frame. It uses a queue for
           incoming requests, see 'setInQueue' and a one
@@ -40,11 +41,9 @@ class ImageExtractor(object):
     def __init__(self):
         """! Initializes the image extractor
         """
-        self.stopped = multiprocessing.Value('i', 0)
-        self.done = multiprocessing.Value('i', 0)
+        super().__init__()
         self._resultQueue = None
         self._inQueue = None
-        self._process = None
 
     def start(self):
         """! Starts the image extraction process
@@ -53,48 +52,27 @@ class ImageExtractor(object):
             raise("Please provide a classifier queue!")
 
         # Start the process
-        self._process = multiprocessing.Process(target=self.extractor, \
-                args=(self._inQueue, self._resultQueue, self.stopped, self.done))
-        self._process.start()
+        super().start()
 
     def setResultQueue(self, queue):
         """! Sets the result queue of the image extractor
         @param queue  Sets the queue, where the process pushes its result
         """
         self._resultQueue = queue
+        self.set_process_param("out_q", self._resultQueue)
 
     def setInQueue(self, queue):
         """! Sets the input queue of the image extractor
         @param queue  Sets the queue, where the process reads its input
         """
         self._inQueue = queue
-
-    def stop(self):
-        """! Forces the process to stop
-        """
-        self.stopped.value = 1
-        try:
-            while(not self._inQueue.empty()):
-                self._inQueue.get()
-            while(not self._resultQueue.empty()):
-                self._resultQueue.get()
-        except:
-            pass
-
-    def join(self):
-        """! Terminate the process and joins it. Should be called after 'stop'.
-        """
-        self._process.terminate()
-        self._process.join()
+        self.set_process_param("in_q", self._inQueue )
 
     @staticmethod
-    def extractor(in_q, out_q, stopped, done):
+    def run(in_q, out_q, parent, stopped, done):
+
         """! Static method, starts the process of the image extractor
         """
-
-        # Ignore interrupt signals
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-
         _process_time = 0
         _process_cnt = 0
 
@@ -128,17 +106,11 @@ class ImageExtractor(object):
 
                             # Forward the image to the classification process (if its running)
                             if get_config("NN_ENABLE"):
-                                #if out_q.() > 20:
-                                #    logger.debug("Classifier Queue full: %i elements" % (out_q.qsize(),))
-                                #    # Remove oldest entry to add a new one
-                                #    out_q.get()
-                                #else:
                                 try:
                                     out_q.put((trackId, img, frame_id), block=False)
                                 except queue.Full:
                                     pass
                                     
-
                             # Save the image in case its requested
                             if get_config("SAVE_EXTRACTED_IMAGES"):
                                 cv2.imwrite(e_path + "/%i-%s.jpeg" % (_process_cnt, datetime.datetime.now().strftime("%Y%m%d-%H%M%S")), img)

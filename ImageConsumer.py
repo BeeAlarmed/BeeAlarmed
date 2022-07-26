@@ -38,10 +38,10 @@ class ImageConsumer(BeeProcess):
         self._classifierResultQueue = None
         self._imageQueue = None
         self._visualQueue = None
-        self.set_queue("e_q", self._extractQueue)
-        self.set_queue("c_q", self._classifierResultQueue)
-        self.set_queue("i_q", self._imageQueue)
-        self.set_queue("v_q", self._visualQueue)
+        self.set_process_param("e_q", self._extractQueue)
+        self.set_process_param("c_q", self._classifierResultQueue)
+        self.set_process_param("i_q", self._imageQueue)
+        self.set_process_param("v_q", self._visualQueue)
 
     def getPositionQueue(self):
         """! Returns the queue object where detected bee positions will be put
@@ -54,21 +54,21 @@ class ImageConsumer(BeeProcess):
         @param queue    The queue object to read new frames from
         """
         self._imageQueue = queue
-        self.set_queue("i_q", self._imageQueue)
+        self.set_process_param("i_q", self._imageQueue)
     
     def setVisualQueue(self, queue):
         """! Set the queue object where the image consumer can find new frames
         @param queue    The queue object to read new frames from
         """
         self._visualQueue = queue
-        self.set_queue("v_q", self._visualQueue)
+        self.set_process_param("v_q", self._visualQueue)
 
     def setClassifierResultQueue(self, queue):
         """! Set the queue obejct where the 'ImageConsumer' can read classification results
         @param  queue   The queue that provides the classification results from the neural network
         """
         self._classifierResultQueue = queue
-        self.set_queue("c_q", self._classifierResultQueue)
+        self.set_process_param("c_q", self._classifierResultQueue)
 
     @staticmethod
     def run(c_q, i_q, e_q, v_q, parent, stopped, done):

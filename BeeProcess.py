@@ -19,14 +19,18 @@ class BeeProcess(object):
         self._stopped = multiprocessing.Value('i', 0)
         self._done = multiprocessing.Value('i', 0)
         self._process = None
-        self._queues = {}
+        self._process_params = {}
         self._parentclass = self.__class__
+        self._started = False
 
-    def set_queue(self, name, queue):
-        self._queues[name] = queue
+    def set_process_param(self, name, queue):
+        self._process_params[name] = queue
 
     def isDone(self):
         return self._done.value
+    
+    def isStarted(self):
+        return self._started
 
     def stop(self):
         """! Forces the process to stop
@@ -43,7 +47,7 @@ class BeeProcess(object):
             logger.warn("Terminating process after waiting 1s for gracefull shutdown!")
             self._process.terminate()
 
-        for qn,q in self._queues.items():
+        for qn,q in self._process_params.items():
             if q is not None:
                 try:
                     while not q.empty():
@@ -75,7 +79,7 @@ class BeeProcess(object):
         """! Starts the image extraction process
         """
         # Start the process
-        args = self._queues.copy()
+        args = self._process_params.copy()
         args["parent"] = self._parentclass
         args["stopped"] = self._stopped
         args["done"] = self._done
@@ -83,3 +87,6 @@ class BeeProcess(object):
         self._process = multiprocessing.Process(target=self._run, \
                 args=[args])
         self._process.start()
+        self._started = True
+
+
