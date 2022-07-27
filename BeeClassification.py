@@ -16,10 +16,11 @@ import time
 import queue
 import multiprocessing
 import logging
+from BeeProcess import BeeProcess
 
 logger = logging.getLogger(__name__)
 
-class BeeClassification(object):
+class BeeClassification(BeeProcess):
     """! The 'BeeClassification' class provides access to the neural network
           which runs in a seperate process. It provides two queue-objects,
           one to queue to incoming images that have to be processed by the
@@ -30,22 +31,22 @@ class BeeClassification(object):
 
         """! Initializes the neural network and the queues
         """
-        # used to stop the process
-        self._stopped = multiprocessing.Value('i', 0)
+        super().__init__()
 
         # reports when the porcess with the neural network is ready
         self._ready = multiprocessing.Value('i', 0)
-        self._done = False
+        self.set_process_param("ready", self._ready)
 
         # The queue for the incoming images
         self._q_in = multiprocessing.Queue(maxsize=20)
+        self.set_process_param("q_in", self._q_in)
 
         ## The queue where the results are reported
         self._q_out = multiprocessing.Queue()
+        self.set_process_param("q_out", self._q_out)
 
         # Start the process and wait for it to run
-        self._process = multiprocessing.Process(target=self._neuralN, args=(self._q_in, self._q_out, self._ready, self._stopped))
-        self._process.start()
+        self.start()
         while self._ready.value == 0:
             time.sleep(5)
             logger.info("Waiting for neural network, this may take up to two minutes")
@@ -63,24 +64,8 @@ class BeeClassification(object):
         """
         return self._q_out
 
-    def stop(self) -> None:
-        """! Tell the classification process and thus the neural network to stop.
-             The process will quit and you need to call join afterwards.
-        """
-        self._stopped.value = True
-        while not self._q_in.empty():
-            self._q_in.get()
-        while not self._q_out.empty():
-            self._q_out.get()
-
-    def join(self):
-        """! Terminate the process and joins it. Should be called after 'stop'.
-        """
-        self._process.terminate()
-        self._process.join()
-
     @staticmethod
-    def _neuralN(q_in, q_out, ready, stopped):
+    def run(q_in, q_out, ready, parent, stopped, done):
         """! Static method, starts a new process that runs the neural network
         """
 
@@ -90,10 +75,6 @@ class BeeClassification(object):
         from tensorflow.keras import layers
         from tensorflow.keras.models import Sequential
         from tensorflow.keras import layers
-        import signal
-
-        # Ignore interrupts
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         _process_time = 0
         _process_cnt = 0
@@ -107,10 +88,12 @@ class BeeClassification(object):
         # Load the model
         try:
             _model = tf.keras.models.load_model(get_config("NN_MODEL_FOLDER"))
+            _model.trainable = False
         except Exception as e:
             ready.value = True
             logger.error("Failed to load Model: %s" % (e,))
             return
+
 
         # Detect desired image size for classification
         img_height = 300
@@ -134,7 +117,7 @@ class BeeClassification(object):
                 imgs.append(img)
 
             # Perform prediction
-            _model.predict_step(tf.convert_to_tensor(imgs))
+            _model.predict_on_batch(tf.convert_to_tensor(imgs))
 
         # Mark process as ready
         ready.value = True
@@ -162,7 +145,7 @@ class BeeClassification(object):
 
                 # Load the images from the in-queue and prepare them for the use in the network
                 failed = False
-                while len(images) < 20 and stopped.value == 0:
+                while len(images) < 5 and stopped.value == 0:
                     try:
                         item = q_in.get(block=False)
                     except queue.Empty:
@@ -206,11 +189,11 @@ class BeeClassification(object):
                                             datetime.now().strftime("%Y%m%d-%H%M%S"), frame_id), img)
 
                         # Push results back
-                        q_out.put((tracks[num][0], entry, images[num]))
+                        q_out.put((tracks[num][0], entry))
 
                 _end_t = time.time() - _start_t
                 logger.debug("Process time: %0.3fms - Queued: %i, processed %i" % (_end_t * 1000.0, q_in.qsize(), len(images)))
                 _process_time += _end_t
             else:
-                time.sleep(0.1)
+                time.sleep(0.5)
         logger.info("Classifcation stopped")

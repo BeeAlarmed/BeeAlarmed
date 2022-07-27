@@ -11,12 +11,13 @@ import cv2
 import time
 import logging
 import queue
+import multiprocessing
 from Statistics import getStatistics
-from threading import Thread
 from ImageProvider import ImageProvider
 from BeeDetection import detect_bees
 from BeeTracking import BeeTracker, BeeTrack
 from Utils import get_config, get_args
+from BeeProcess import BeeProcess
 if get_config("NN_ENABLE"):
     from BeeClassification import BeeClassification
 
@@ -24,7 +25,7 @@ from multiprocessing import Queue
 
 logger = logging.getLogger(__name__)
 
-class ImageConsumer(Thread):
+class ImageConsumer(BeeProcess):
     """! The 'ImageConsumer' processes the frames which are provided
     by the 'ImageProvider'. It performs the bee detection, bee tracking and
     forwards findings to the 'ImageExtractor' to feed them to the neural network.
@@ -32,13 +33,15 @@ class ImageConsumer(Thread):
     def __init__(self):
         """! Intitilizes the 'ImageConsumer'
         """
-        self.stopped = False
-        self._done = False
+        super().__init__()
         self._extractQueue = Queue()
         self._classifierResultQueue = None
         self._imageQueue = None
         self._visualQueue = None
-        Thread.__init__(self)
+        self.set_process_param("e_q", self._extractQueue)
+        self.set_process_param("c_q", self._classifierResultQueue)
+        self.set_process_param("i_q", self._imageQueue)
+        self.set_process_param("v_q", self._visualQueue)
 
     def getPositionQueue(self):
         """! Returns the queue object where detected bee positions will be put
@@ -51,24 +54,30 @@ class ImageConsumer(Thread):
         @param queue    The queue object to read new frames from
         """
         self._imageQueue = queue
+        self.set_process_param("i_q", self._imageQueue)
     
     def setVisualQueue(self, queue):
         """! Set the queue object where the image consumer can find new frames
         @param queue    The queue object to read new frames from
         """
         self._visualQueue = queue
+        self.set_process_param("v_q", self._visualQueue)
 
     def setClassifierResultQueue(self, queue):
         """! Set the queue obejct where the 'ImageConsumer' can read classification results
         @param  queue   The queue that provides the classification results from the neural network
         """
         self._classifierResultQueue = queue
+        self.set_process_param("c_q", self._classifierResultQueue)
 
-    def run(self: Thread) -> None:
+    @staticmethod
+    def run(c_q, i_q, e_q, v_q, parent, stopped, done):
         """! The main thread that runs the 'ImageConsumer'
         """
-        _process_time = 0
+        _process_time = time.time()
         _process_cnt = 0
+        _lastProcessFPS = 0
+        _start_t = time.time()
         writer = None
 
         # Create a Bee Tracker
@@ -77,22 +86,22 @@ class ImageConsumer(Thread):
         # Create statistics object
         statistics = getStatistics()
 
-        if type(self._imageQueue) == type(None):
+        if type(i_q) == type(None):
             raise("No image queue provided!")
 
-        while not self.stopped:
+        while stopped.value == 0:
 
-            _start_t = time.time()
+            _process_cnt += 1
 
             # When the neural network is enabled, then read results from the classifcation queue
             # and forward them the the corresponding track and statistics
             if get_config("NN_ENABLE"):
 
                 # Populate classification results
-                while not self._classifierResultQueue.empty():
+                while not c_q.empty():
 
                     # Transfer results to the track
-                    trackId, result, image = self._classifierResultQueue.get()
+                    trackId, result = c_q.get()
                     track = tracker.getTrackById(trackId)
                     if type(track) != type(None):
                         track.imageClassificationComplete(result)
@@ -100,14 +109,13 @@ class ImageConsumer(Thread):
                         statistics.addClassificationResult(trackId, result)
 
             # Process every incoming image
-            if not self._imageQueue.empty():
-                _process_cnt += 1
+            if not i_q.empty() and stopped.value == 0:
 
                 if _process_cnt % 100 == 0:
                     logger.debug("Process time(get): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                 # Get frame set
-                fs = self._imageQueue.get()
+                fs = i_q.get()
                 if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_150x300":
                     img_1080, img_540, img_180 = fs
                 elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
@@ -127,56 +135,43 @@ class ImageConsumer(Thread):
                 # Scale is 2 because detection was made on img_540 but cutting is on img_1080
                 if get_config("ENABLE_IMAGE_EXTRACTION"):
                     data = tracker.getLastBeePositions(get_config("EXTRACT_FAME_STEP"))
-                    if len(data) and type(self._extractQueue) != type(None):
+                    if len(data) and type(e_q) != type(None):
                         if get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_150x300":
-                            self._extractQueue.put((data, img_1080, 2, _process_cnt))
+                            e_q.put((data, img_1080, 2, _process_cnt))
                         elif get_config("NN_EXTRACT_RESOLUTION") == "EXT_RES_75x150":
-                            self._extractQueue.put((data, img_540, 1, _process_cnt))
+                            e_q.put((data, img_540, 1, _process_cnt))
                         else:
                             raise("Unknown setting for EXT_RES_75x150, expected EXT_RES_150x300 or EXT_RES_75x150")
 
-                if _process_cnt % 100 == 0:
-                    logger.debug("Process time(previsual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
-
-                try:
-                    data = (img_540, detected_bees, detected_bee_groups, tracker) 
-                    self._visualQueue.put(data, block=False)
-                except queue.Full:
-                    print("frame skip !!")
+                # Draw the results if enabled
+                if get_config("VISUALIZATION_ENABLED"):
+                    if _process_cnt % get_config("VISUALIZATION_FRAME_SKIP") == 0:
+                        try:
+                            data = (img_540, detected_bees, detected_bee_groups, tracker, _lastProcessFPS) 
+                            v_q.put(data, block=False)
+                        except queue.Full:
+                            print("frame skip !!")
                 
-                if _process_cnt % 100 == 0:
-                    logger.debug("Process time(visual): %0.3fms" % ((time.time() - _start_t) * 1000.0))
 
                 # Print log entry about process time each 100 frames
-                _process_time += time.time() - _start_t
                 if _process_cnt % 100 == 0:
-                    logger.debug("Process time all: %0.3fms" % (_process_time * 10.0))
-                    _process_time = 0
-
-
-                # Limit FPS by delaying manually
-                _end_t = time.time() - _start_t
-                limit_time = 1 / get_config("LIMIT_FPS_TO")
-                if _end_t < limit_time:
-                    time.sleep(limit_time - _end_t)
+                    _pt = time.time() - _process_time
+                    _lastProcessFPS = 100 / _pt
+                    logger.debug("Process time all: %0.3fms" % (_pt * 10.0))
+                    _process_time = time.time()
 
                 # Update statistics
                 _dh = getStatistics()
                 _dh.frameProcessed()
 
             else:
-                time.sleep(0.1)
+                time.sleep(0.01)
 
-        self._done = True
+            # Limit FPS by delaying manually
+            _end_t = time.time() - _start_t
+            limit_time = 1 / get_config("LIMIT_FPS_TO")
+            if _end_t < limit_time:
+                time.sleep(limit_time - _end_t)
+            _start_t = time.time()
+
         logger.info("Image Consumer stopped")
-
-    def isDone(self: Thread) -> bool:
-        """! Returns whether the thread has stopped or not
-        """
-        return self._done
-
-    def stop(self: Thread) -> None:
-        """! Forces the thread to stop
-        """
-        self.stopped = True
-
